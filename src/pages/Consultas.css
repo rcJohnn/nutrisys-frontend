@@ -461,5 +461,21 @@
   flex-wrap: wrap;
 }
 
+/* ── Popup action buttons: hover fixes ── */
+.cc-popup-actions .btn {
+  transition: background 0.18s, color 0.18s, transform 0.1s, box-shadow 0.18s;
+}
+.cc-popup-actions .btn:hover { transform: translateY(-1px); }
+.cc-popup-actions .btn-primary  { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+.cc-popup-actions .btn-primary:hover  { background: #0a58ca; color: #fff !important; }
+.cc-popup-actions .btn-success  { background: var(--ev-primary); color: #fff; border-color: var(--ev-primary); }
+.cc-popup-actions .btn-success:hover  { background: #005238; color: #fff !important; box-shadow: 0 3px 10px rgba(0,108,73,0.3); }
+.cc-popup-actions .btn-danger   { background: #dc3545; color: #fff; border-color: #dc3545; }
+.cc-popup-actions .btn-danger:hover   { background: #b02a37; color: #fff !important; }
+.cc-popup-actions .btn-secondary { background: var(--ns-slate-500); color: #fff; border-color: var(--ns-slate-500); }
+.cc-popup-actions .btn-secondary:hover { background: var(--ns-slate-700); color: #fff !important; }
+.cc-popup-actions .btn-info     { background: #0dcaf0; color: #000; border-color: #0dcaf0; }
+.cc-popup-actions .btn-info:hover     { background: #0bb2d4; color: #000 !important; }
+
 @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
 @keyframes slideUp { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }

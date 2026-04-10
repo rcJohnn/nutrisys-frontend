@@ -204,16 +204,12 @@ const MantenimientoConsultas: React.FC = () => {
   return (
     <div className="mantenimiento-consultas-page mc-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item">
-            <a href="/consultas">Consulta de Citas</a>
-          </li>
-          <li className="breadcrumb-item active" aria-current="page">
-            {isEdit ? 'Editar Cita' : 'Agendar Cita'}
-          </li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span onClick={() => navigate('/consultas')} className="cm-bc-link">Consulta de Citas</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">{isEdit ? 'Editar Cita' : 'Agendar Cita'}</span>
       </nav>
 
       {/* Welcome */}

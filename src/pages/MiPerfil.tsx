@@ -158,10 +158,8 @@ const MiPerfil: React.FC = () => {
   return (
     <div className="mi-perfil-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item active" aria-current="page">Mi Perfil</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span className="cm-bc-active">Mi Perfil</span>
       </nav>
 
       <div className="welcome-msg pt-3 pb-4">

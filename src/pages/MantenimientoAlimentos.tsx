@@ -147,12 +147,12 @@ const MantenimientoAlimentos: React.FC = () => {
   if (isDetalle && loadingDetalle) {
     return (
       <div className="mantenimiento-alimentos-page">
-        <nav aria-label="breadcrumb">
-          <ol className="breadcrumb my-breadcrumb">
-            <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-            <li className="breadcrumb-item"><a href="/alimentos">Consulta de Alimentos</a></li>
-            <li className="breadcrumb-item active">Cargando...</li>
-          </ol>
+        <nav className="cm-breadcrumb">
+          <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+          <span className="cm-bc-sep"> &rsaquo; </span>
+          <span onClick={() => navigate('/alimentos')} className="cm-bc-link">Consulta de Alimentos</span>
+          <span className="cm-bc-sep"> &rsaquo; </span>
+          <span className="cm-bc-active">Cargando...</span>
         </nav>
         <div className="text-center p-5">
           <i className="fa fa-spinner fa-spin fa-3x text-muted"></i>
@@ -168,12 +168,12 @@ const MantenimientoAlimentos: React.FC = () => {
   return (
     <div className="mantenimiento-alimentos-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item"><a href="/alimentos">Consulta de Alimentos</a></li>
-          <li className="breadcrumb-item active">Información de Alimento</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span onClick={() => navigate('/alimentos')} className="cm-bc-link">Consulta de Alimentos</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Información de Alimento</span>
       </nav>
 
       {/* Welcome */}

@@ -20,6 +20,7 @@ import PadecimientosUsuario from './pages/PadecimientosUsuario';
 import Progreso from './pages/Progreso';
 import BusquedaPaciente from './pages/BusquedaPaciente';
 import BusquedaPadecimientos from './pages/BusquedaPadecimientos';
+import CompletarMetricas from './pages/CompletarMetricas';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function App() {
             <Route path="/consultas/nueva" element={<MantenimientoConsultas />} />
             <Route path="/consultas/editar/:id" element={<MantenimientoConsultas />} />
             <Route path="/consultas/detalle/:id" element={<DetalleConsulta />} />
+            <Route path="/consultas/:id/completar" element={<CompletarMetricas />} />
 
             {/* Generador Plan */}
             <Route path="/generar-plan" element={<GeneradorPlan />} />

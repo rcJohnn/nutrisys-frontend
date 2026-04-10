@@ -319,12 +319,12 @@ const ConfigAgenda: React.FC = () => {
   return (
     <div className="config-agenda-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item"><a href="/medicos">Médicos</a></li>
-          <li className="breadcrumb-item active">Configuración de Agenda</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span onClick={() => navigate('/medicos')} className="cm-bc-link">Médicos</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Configuración de Agenda</span>
       </nav>
 
       <div className="welcome-msg pt-3 pb-3">

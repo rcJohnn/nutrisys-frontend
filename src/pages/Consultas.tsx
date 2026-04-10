@@ -133,10 +133,11 @@ interface PopupProps {
   onCancelar: () => void;
   onNoAsistio: () => void;
   onVerDetalle: () => void;
+  onCompletarMetricas: () => void;
 }
 
 const ConsultaPopup: React.FC<PopupProps> = ({
-  consulta, onClose, onEditar, onCancelar, onNoAsistio, onVerDetalle,
+  consulta, onClose, onEditar, onCancelar, onNoAsistio, onVerDetalle, onCompletarMetricas,
 }) => {
   const code  = estadoCode(consulta.Estado);
   const label = estadoLabel(consulta.Estado);
@@ -189,6 +190,9 @@ const ConsultaPopup: React.FC<PopupProps> = ({
             <>
               <button className="btn btn-sm btn-primary btn-style" onClick={onEditar}>
                 <i className="fa fa-edit" /> Editar
+              </button>
+              <button className="btn btn-sm btn-success btn-style" onClick={onCompletarMetricas}>
+                <i className="fa fa-check-circle" /> Completar Métricas
               </button>
               <button className="btn btn-sm btn-danger btn-style" onClick={onCancelar}>
                 <i className="fa fa-times" /> Cancelar
@@ -323,11 +327,10 @@ const Consultas: React.FC = () => {
   return (
     <div className="consultas-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item active">Citas Médicas</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Citas Médicas</span>
       </nav>
 
       {/* Welcome */}
@@ -435,7 +438,7 @@ const Consultas: React.FC = () => {
                                       <button
                                         className="cc-action-btn cc-action-btn--check"
                                         title="Completar Métricas"
-                                        onClick={() => navigate(`/consultas/detalle/${c.Id_Consulta}`)}
+                                        onClick={() => navigate(`/consultas/${c.Id_Consulta}/completar`)}
                                       >
                                         <i className="fa fa-check-circle" />
                                       </button>
@@ -586,6 +589,7 @@ const Consultas: React.FC = () => {
           consulta={popup}
           onClose={() => setPopup(null)}
           onEditar={() => { navigate(`/consultas/editar/${popup.Id_Consulta}`); setPopup(null); }}
+          onCompletarMetricas={() => { navigate(`/consultas/${popup.Id_Consulta}/completar`); setPopup(null); }}
           onCancelar={() => handleCancelar(popup.Id_Consulta)}
           onNoAsistio={() => handleNoAsistio(popup.Id_Consulta)}
           onVerDetalle={() => { navigate(`/consultas/detalle/${popup.Id_Consulta}`); setPopup(null); }}

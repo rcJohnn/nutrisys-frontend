@@ -5,6 +5,7 @@ import './BusquedaPaciente.css';
 
 const BusquedaPadecimientos: React.FC = () => {
   const navigate = useNavigate();
+  const userName = localStorage.getItem('userName') || '';
   const userEmail = localStorage.getItem('userEmail') || '';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,15 +38,14 @@ const BusquedaPadecimientos: React.FC = () => {
 
   return (
     <div className="busqueda-paciente-page">
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item active" aria-current="page">Gestión de Padecimientos</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Gestión de Padecimientos</span>
       </nav>
 
       <div className="welcome-msg pt-3 pb-4">
-        <h1>Hola <span className="text-primary">{userEmail.split('@')[0]}</span>, Bienvenido</h1>
+        <h1>Hola <span className="text-primary">{userName}</span>, Bienvenido</h1>
         <p>{userEmail}</p>
       </div>
 

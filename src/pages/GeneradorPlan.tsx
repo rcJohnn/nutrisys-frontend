@@ -173,11 +173,10 @@ const GeneradorPlan: React.FC = () => {
   return (
     <div className="gp-page">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb my-breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item active" aria-current="page">Generador de Plan Nutricional</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Generador de Plan Nutricional</span>
       </nav>
 
       <div className="welcome-msg pt-3 pb-4">

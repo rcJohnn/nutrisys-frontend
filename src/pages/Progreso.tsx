@@ -279,11 +279,10 @@ const Progreso: React.FC = () => {
 
   return (
     <div className="progreso-page">
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-          <li className="breadcrumb-item active" aria-current="page">Mi Progreso</li>
-        </ol>
+      <nav className="cm-breadcrumb">
+        <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Mi Progreso</span>
       </nav>
 
       <div className="welcome-msg pt-3 pb-4">
