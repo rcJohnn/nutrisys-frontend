@@ -1,0 +1,299 @@
+/* Editorial Vitality — Login Page */
+
+/* ─── Reset & Base ─────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+*, *::before, *::after { box-sizing: border-box; }
+body, html { margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+button, input, select { -webkit-appearance: none; font-family: inherit; }
+button, .btn, select { cursor: pointer; }
+a { text-decoration: none; }
+img { max-width: 100%; }
+h1, h2, h3, h4, h5, h6, p { margin: 0; padding: 0; }
+
+/* ─── EV Tokens (local) ────────────────────────────────────── */
+:root {
+    --ev-primary:            #006c49;
+    --ev-primary-container:  #10b981;
+    --ev-on-surface:         #131b2e;
+    --ev-on-surface-variant: #3c4a42;
+    --ev-surface:            #faf8ff;
+    --ev-surface-low:        #f2f3ff;
+    --ev-surface-container:  #eaedff;
+    --ev-surface-lowest:     #ffffff;
+    --ev-outline-variant:    #bbcabf;
+    --ev-outline:            #6c7a71;
+}
+
+/* ─── Split Layout ─────────────────────────────────────────── */
+.ls-layout {
+    display: flex;
+    height: 100vh;       /* altura fija para que Vide tenga contenedor real */
+    overflow: hidden;
+}
+
+/* ─── LEFT: Video Panel ────────────────────────────────────── */
+.ls-left {
+    display: none;
+    position: relative;  /* requerido por Vide para contener el video */
+    overflow: hidden;
+    flex: 0 0 55%;       /* no crece, no encoge, ocupa exactamente 55% */
+    height: 100vh;       /* altura explícita para que Vide llene el panel */
+}
+
+/* Overlay verde-oscuro sobre el video */
+.ls-left-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(135deg, rgba(0,108,73,0.40) 0%, rgba(0,0,0,0.30) 100%);
+    pointer-events: none;
+}
+
+/* Vide plugin genera un div wrapper + video — forzarlos a llenar el contenedor */
+.ls-left > div:not(.ls-left-overlay) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 0 !important;
+}
+
+.ls-left video {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: cover !important;
+    z-index: 0 !important;
+}
+
+/* Responsive — mostrar en tablet y desktop */
+@media (min-width: 768px) {
+    .ls-left {
+        display: block;
+    }
+}
+
+@media (min-width: 1200px) {
+    .ls-left {
+        flex-basis: 60%;
+    }
+}
+
+/* ─── RIGHT: Login Panel ───────────────────────────────────── */
+.ls-right {
+    flex: 1;             /* ocupa el espacio restante después del panel izquierdo */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ev-surface);
+    padding: 2.5rem 1.5rem;
+    overflow-y: auto;    /* scroll si el form no entra en pantallas pequeñas */
+    height: 100vh;
+}
+
+.ls-right-inner {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ─── Branding ─────────────────────────────────────────────── */
+.ls-branding {
+    margin-bottom: 2.25rem;
+}
+
+.ls-branding img {
+    /* tamaño controlable con style="height:Xpx;" en el ASPX */
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* ─── Heading ──────────────────────────────────────────────── */
+.ls-title {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--ev-on-surface);
+    letter-spacing: -0.03em;
+    margin-bottom: 0.35rem;
+}
+
+.ls-subtitle {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--ev-on-surface-variant);
+    margin-bottom: 2rem;
+}
+
+/* ─── Form ─────────────────────────────────────────────────── */
+.ls-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ls-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.ls-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ls-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ev-on-surface-variant);
+}
+
+/* Input wrapper con ícono */
+.ls-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ls-input-icon {
+    position: absolute;
+    left: 0.9rem;
+    font-size: 0.88rem;
+    color: var(--ev-outline);
+    pointer-events: none;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+}
+
+.ls-input {
+    width: 100%;
+    padding: 0.88rem 1rem 0.88rem 2.6rem;
+    background: var(--ev-surface-lowest);
+    border: none;
+    outline: 1px solid rgba(187, 202, 191, 0.35);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--ev-on-surface);
+    transition: outline 0.2s, background 0.2s;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.ls-input::placeholder {
+    color: rgba(108, 122, 113, 0.5);
+}
+
+.ls-input:focus {
+    outline: 2px solid var(--ev-primary);
+    background: #fff;
+}
+
+/* Password */
+.ls-input-pw {
+    padding-right: 3rem;
+}
+
+.ls-pw-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--ev-outline);
+    font-size: 0.88rem;
+    z-index: 2;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 10px 10px 0;
+    transition: color 0.2s;
+}
+
+.ls-pw-toggle:hover {
+    color: var(--ev-primary);
+    transform: translateY(-50%);
+}
+
+/* Submit */
+.ls-btn {
+    width: 100%;
+    padding: 0.92rem 1rem;
+    margin-top: 0.25rem;
+    background: linear-gradient(135deg, var(--ev-primary) 0%, #005236 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border: none;
+    border-radius: 10px;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 24px rgba(0, 108, 73, 0.2);
+    transition: box-shadow 0.2s, transform 0.15s;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.ls-btn:hover {
+    box-shadow: 0 12px 32px rgba(0, 108, 73, 0.3);
+}
+
+.ls-btn:active {
+    transform: scale(0.99);
+}
+
+/* ─── Sign Up ───────────────────────────────────────────────── */
+.ls-signup {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ev-on-surface-variant);
+    margin-top: 1.25rem;
+}
+
+.ls-signup a {
+    color: var(--ev-primary);
+    font-weight: 700;
+}
+
+.ls-signup a:hover {
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 108, 73, 0.35);
+}
+
+/* ─── Ghost border editorial ────────────────────────────────── */
+.ls-ghost-border {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    outline: 1px solid rgba(187, 202, 191, 0.12);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .ls-right {
+        padding: 2rem 1.25rem;
+    }
+
+    .ls-title {
+        font-size: 1.6rem;
+    }
+}

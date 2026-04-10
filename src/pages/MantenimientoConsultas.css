@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════
+   MantenimientoConsultas
+═══════════════════════════════════════ */
+
+.mc-page {
+  animation: ns-page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Patient search / badge ── */
+.mc-search-wrapper {
+  position: relative;
+}
+
+.mc-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--ev-surface-lowest);
+  border: 1px solid var(--ev-outline-variant);
+  border-top: none;
+  border-radius: 0 0 var(--ns-radius-md) var(--ns-radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.mc-search-item {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.84rem;
+  cursor: pointer;
+  color: var(--ev-on-surface);
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mc-search-item:hover { background: var(--ev-surface-low); }
+
+.mc-search-item i { color: var(--ev-primary); font-size: 0.9rem; }
+
+.mc-paciente-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ev-primary);
+  color: #fff;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.mc-paciente-badge button {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.mc-paciente-badge button:hover { color: #fff; }
+
+/* ── Clinic cards ── */
+.mc-clinica-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.mc-clinica-card {
+  border: 2px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-lg);
+  padding: 0.85rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--ev-surface-lowest);
+  position: relative;
+}
+
+.mc-clinica-card:hover { border-color: var(--ev-primary); background: #f0f9f4; }
+
+.mc-clinica-card.selected {
+  border-color: var(--ev-primary);
+  background: #f0f9f4;
+  box-shadow: 0 0 0 3px rgba(0,108,73,0.1);
+}
+
+.mc-clinica-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  background: var(--ev-primary);
+  color: #fff;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.mc-clinica-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ns-radius-md);
+  object-fit: cover;
+  margin-bottom: 0.5rem;
+}
+
+.mc-clinica-logo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ns-radius-md);
+  background: var(--ev-surface-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--ns-slate-400);
+  margin-bottom: 0.5rem;
+}
+
+.mc-clinica-nombre {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ev-on-surface);
+  margin-bottom: 0.2rem;
+}
+
+.mc-clinica-dir {
+  font-size: 0.75rem;
+  color: var(--ns-slate-500);
+  line-height: 1.4;
+}
+
+/* ── Slots grid ── */
+.mc-slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mc-slot {
+  padding: 0.45rem 0.85rem;
+  border: 2px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-md);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--ev-surface-lowest);
+  color: var(--ev-on-surface);
+  transition: all 0.15s;
+}
+
+.mc-slot:hover { border-color: var(--ev-primary); color: var(--ev-primary); }
+
+.mc-slot.selected {
+  background: var(--ev-primary);
+  color: #fff;
+  border-color: var(--ev-primary);
+}
+
+/* ── Self-schedule patient badge ── */
+.mc-self-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--ev-surface-low);
+  border-radius: var(--ns-radius-lg);
+  padding: 0.75rem 1rem;
+}
+
+.mc-self-badge i {
+  font-size: 1.5rem;
+  color: var(--ev-primary);
+}
+
+.mc-self-badge-name {
+  font-weight: 700;
+  color: var(--ev-on-surface);
+}
+
+.mc-self-badge-sub {
+  font-size: 0.78rem;
+  color: var(--ns-slate-500);
+}

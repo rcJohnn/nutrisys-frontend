@@ -1,0 +1,4 @@
+/* PadecimientosUsuario — inherits global .card and .input-style from base */
+.padecimientos-page .nav-tabs .nav-link {
+  cursor: pointer;
+}

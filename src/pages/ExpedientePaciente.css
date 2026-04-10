@@ -1,0 +1,4 @@
+/* ExpedientePaciente — inherits global .card and .input-style from base */
+.expediente-page .nav-tabs .nav-link {
+  cursor: pointer;
+}

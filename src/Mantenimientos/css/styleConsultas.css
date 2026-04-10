@@ -1,0 +1,692 @@
+/* ═══════════════════════════════════════════════════
+   CALENDARIO — VARIABLES DE COLOR
+   Cambiá estos valores cuando definan la paleta final
+   ═══════════════════════════════════════════════════ */
+:root {
+    /* [COLOR-FONDO-CALENDARIO] Fondo general del calendario */
+    --cal-bg:               var(--ev-surface);
+
+    /* [COLOR-FONDO-HEADER] Barra superior con título y botones */
+    --cal-header-bg:        var(--ev-surface-lowest);
+
+    /* [COLOR-BORDE-GENERAL] Bordes de celdas y separadores */
+    --cal-border:           transparent;
+
+    /* [COLOR-HORA-ACTUAL] Línea que indica la hora actual */
+    --cal-now-indicator:    var(--ev-primary);
+
+    /* [COLOR-DIA-HOY] Fondo de la columna/celda del día actual */
+    --cal-today-bg:         rgba(0, 108, 73, 0.06);
+
+    /* [COLOR-TEXTO-HORA] Números de horas en la columna izquierda */
+    --cal-time-text:        var(--ev-on-surface-variant);
+
+    /* [COLOR-TEXTO-DIA] Nombre del día en la cabecera (LUN, MAR...) */
+    --cal-day-text:         var(--ev-on-surface);
+
+    /* [COLOR-NUMERO-DIA-HOY] Círculo del número del día actual */
+    --cal-today-circle-bg:  var(--ev-primary);
+    --cal-today-circle-txt: #ffffff;
+
+    /* [COLOR-BOTON-NAV] Botones prev/next/today del toolbar */
+    --cal-btn-bg:           var(--ev-surface-lowest);
+    --cal-btn-border:       transparent;
+    --cal-btn-text:         var(--ev-on-surface);
+    --cal-btn-hover-bg:     var(--ev-surface-container);
+    --cal-btn-active-bg:    var(--ev-primary);
+    --cal-btn-active-txt:   #ffffff;
+
+    /* ── COLORES DE EVENTOS POR ESTADO ──────────────── */
+
+    /* [COLOR-EVENTO-PENDIENTE] Gradiente y borde del evento Pendiente */
+    --cal-ev-pendiente-from:   #ff9f0a;
+    --cal-ev-pendiente-to:     #ff6b00;
+    --cal-ev-pendiente-border: #e05c00;
+    --cal-ev-pendiente-txt:    #ffffff;
+
+    /* [COLOR-EVENTO-COMPLETADA] Gradiente y borde del evento Completada */
+    --cal-ev-completada-from:   #30d158;
+    --cal-ev-completada-to:     #25a244;
+    --cal-ev-completada-border: #1e8a38;
+    --cal-ev-completada-txt:    #ffffff;
+
+    /* [COLOR-EVENTO-CANCELADA] Gradiente y borde del evento Cancelada */
+    --cal-ev-cancelada-from:   #ff453a;
+    --cal-ev-cancelada-to:     #d70015;
+    --cal-ev-cancelada-border: #b0000f;
+    --cal-ev-cancelada-txt:    #ffffff;
+
+    /* [COLOR-EVENTO-NOASISTIO] Gradiente y borde del evento No Asistió */
+    --cal-ev-noasistio-from:   #8e8e93;
+    --cal-ev-noasistio-to:     #636366;
+    --cal-ev-noasistio-border: #48484a;
+    --cal-ev-noasistio-txt:    #ffffff;
+
+    /* ── POPUP ───────────────────────────────────────── */
+
+    /* [COLOR-POPUP-FONDO] Fondo del popup al hacer click en un evento */
+    --cal-popup-bg:         var(--ev-surface-lowest);
+
+    /* [COLOR-POPUP-SOMBRA] Sombra del popup */
+    --cal-popup-shadow:     rgba(19, 27, 46, 0.08);
+
+    /* [COLOR-POPUP-BORDE] Borde superior de color del popup */
+    --cal-popup-accent:     var(--ev-primary);
+
+    /* [COLOR-POPUP-TEXTO-TITULO] Nombre del paciente en el popup */
+    --cal-popup-title:      var(--ev-on-surface);
+
+    /* [COLOR-POPUP-TEXTO-META] Textos secundarios del popup */
+    --cal-popup-meta:       var(--ev-on-surface-variant);
+
+    /* ── TOGGLE VISTA ────────────────────────────────── */
+
+    /* [COLOR-TOGGLE-ACTIVO] Botón de vista seleccionado */
+    --cal-toggle-active-bg:  var(--ev-primary);
+    --cal-toggle-active-txt: #ffffff;
+
+    /* [COLOR-TOGGLE-INACTIVO] Botón de vista no seleccionado */
+    --cal-toggle-idle-bg:    var(--ev-surface-lowest);
+    --cal-toggle-idle-border: transparent;
+    --cal-toggle-idle-txt:   var(--ev-on-surface);
+
+    /* [COLOR-HOVER-CELDA] Fondo al pasar el mouse sobre una celda vacía */
+    --cal-cell-hover:       var(--ev-surface-low);
+}
+
+/* ═══════════════════════════════════════════════════
+   BASE DEL CALENDARIO
+   ═══════════════════════════════════════════════════ */
+#calendarFC {
+    position: relative;
+    background: var(--cal-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+    font-family: var(--ns-font-body);
+}
+
+/* Header toolbar */
+.fc .fc-toolbar {
+    background: var(--cal-header-bg);
+    padding: 14px 20px 12px;
+    margin-bottom: 0 !important;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cal-day-text);
+    letter-spacing: -0.2px;
+}
+
+/* Botones de navegación */
+.fc .fc-button {
+    background: var(--ev-gradient-primary) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: var(--ns-radius-md) !important;
+    font-size: .78rem !important;
+    font-weight: 500 !important;
+    padding: 5px 12px !important;
+    box-shadow: none !important;
+    transition: opacity .15s !important;
+}
+.fc .fc-button:hover {
+    opacity: 0.88;
+    box-shadow: none !important;
+}
+.fc .fc-button-active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--ev-secondary) !important;
+    color:      #fff !important;
+    border: none !important;
+}
+
+/* Cabecera de días */
+.fc .fc-col-header-cell {
+    background: var(--cal-header-bg);
+    padding: 8px 0 6px;
+}
+.fc .fc-col-header-cell-cushion {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--cal-day-text);
+    text-decoration: none !important;
+}
+
+/* Números de hora */
+.fc .fc-timegrid-slot-label-cushion {
+    font-size: .72rem;
+    color: var(--cal-time-text);
+    font-weight: 400;
+    padding-right: 10px;
+}
+
+/* Celdas del grid */
+.fc .fc-timegrid-slot {
+    border-color: var(--cal-border) !important;
+}
+.fc .fc-timegrid-col,
+.fc td, .fc th {
+    border-color: var(--cal-border) !important;
+}
+
+/* Día actual */
+.fc .fc-day-today {
+    background: var(--cal-today-bg) !important;
+}
+.fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+    color: var(--cal-today-circle-bg);
+}
+
+/* Indicador hora actual */
+.fc .fc-timegrid-now-indicator-line {
+    border-color: var(--cal-now-indicator) !important;
+    border-width: 2px !important;
+}
+.fc .fc-timegrid-now-indicator-arrow {
+    border-top-color:    var(--cal-now-indicator) !important;
+    border-bottom-color: var(--cal-now-indicator) !important;
+}
+
+/* Fondo semana/mes */
+.fc .fc-timegrid-body,
+.fc .fc-daygrid-body {
+    background: var(--cal-bg);
+}
+
+/* ═══════════════════════════════════════════════════
+   EVENTOS CON GRADIENTE
+   ═══════════════════════════════════════════════════ */
+.fc-event {
+    border-radius: 7px !important;
+    border: none !important;
+    padding: 3px 7px !important;
+    font-size: .75rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12) !important;
+    transition: transform .1s, box-shadow .1s !important;
+    cursor: pointer !important;
+}
+.fc-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.18) !important;
+}
+
+.fc-event-pendiente {
+    background: linear-gradient(135deg,
+        var(--cal-ev-pendiente-from),
+        var(--cal-ev-pendiente-to)) !important;
+    color: var(--cal-ev-pendiente-txt) !important;
+}
+.fc-event-completada {
+    background: linear-gradient(135deg,
+        var(--cal-ev-completada-from),
+        var(--cal-ev-completada-to)) !important;
+    color: var(--cal-ev-completada-txt) !important;
+}
+.fc-event-cancelada {
+    background: linear-gradient(135deg,
+        var(--cal-ev-cancelada-from),
+        var(--cal-ev-cancelada-to)) !important;
+    color: var(--cal-ev-cancelada-txt) !important;
+    opacity: .75 !important;
+}
+.fc-event-noasistio {
+    background: linear-gradient(135deg,
+        var(--cal-ev-noasistio-from),
+        var(--cal-ev-noasistio-to)) !important;
+    color: var(--cal-ev-noasistio-txt) !important;
+    opacity: .75 !important;
+}
+
+/* Título y hora dentro del evento */
+.fc-event .fc-event-title { font-weight: 600; }
+.fc-event .fc-event-time  { font-size: .68rem; opacity: .85; }
+
+/* Hover suave en celdas vacías */
+.fc .fc-timegrid-col-frame:hover {
+    background: var(--cal-cell-hover);
+}
+
+/* ═══════════════════════════════════════════════════
+   POPUP DE EVENTO
+   ═══════════════════════════════════════════════════ */
+#popupCita {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--cal-popup-bg);
+    border-radius: 14px;
+    padding: 18px 20px 16px;
+    min-width: 270px;
+    max-width: 320px;
+    box-shadow: 0 8px 30px var(--cal-popup-shadow);
+    border-top: 4px solid var(--cal-popup-accent);
+    font-family: var(--ns-font-body);
+}
+#popupCita .popup-close {
+    position: absolute; top: 10px; right: 14px;
+    cursor: pointer; font-size: 1rem;
+    color: var(--cal-popup-meta);
+    line-height: 1;
+}
+#popupCita .popup-close:hover { color: var(--cal-popup-title); }
+#popupCita .popup-header {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--cal-popup-title);
+    margin-bottom: 10px;
+    padding-right: 20px;
+    line-height: 1.3;
+}
+#popupCita .popup-meta {
+    font-size: .8rem;
+    color: var(--cal-popup-meta);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+#popupCita .popup-btns {
+    margin-top: 14px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+#popupCita .popup-btns .btn {
+    border-radius: 8px;
+    font-size: .75rem;
+    padding: 5px 10px;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════
+   TOGGLE VISTA (Calendario / Lista)
+   ═══════════════════════════════════════════════════ */
+.btn-vista {
+    border-radius: 20px;
+    font-size: .8rem;
+    padding: 5px 16px;
+    font-weight: 500;
+    border: none;
+    background: var(--cal-toggle-idle-bg);
+    color: var(--cal-toggle-idle-txt);
+    transition: all .15s;
+}
+.btn-vista.activo {
+    background: var(--cal-toggle-active-bg);
+    color:      var(--cal-toggle-active-txt);
+    box-shadow: var(--ev-shadow-ambient);
+}
+.btn-vista:hover:not(.activo) {
+    background: var(--cal-btn-hover-bg);
+}
+
+/* ═══════════════════════════════════════════════════
+   VISTA MES — celdas de día
+   ═══════════════════════════════════════════════════ */
+.fc .fc-daygrid-day-number {
+    font-size: .78rem;
+    color: var(--cal-day-text);
+    font-weight: 500;
+    text-decoration: none !important;
+}
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background: var(--cal-today-circle-bg);
+    color:      var(--cal-today-circle-txt);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem;
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   FullCalendar v6 — Editorial Vitality Theme Overrides
+   ═══════════════════════════════════════════════════════ */
+
+/* CSS variable overrides for FullCalendar */
+.fc {
+  --fc-border-color:                    transparent;
+  --fc-daygrid-event-dot-width:         8px;
+  --fc-event-bg-color:                  var(--ev-primary);
+  --fc-event-border-color:              transparent;
+  --fc-event-text-color:                #fff;
+  --fc-event-selected-overlay-color:    rgba(0, 0, 0, 0.20);
+  --fc-more-link-bg-color:              var(--ev-surface-low);
+  --fc-more-link-text-color:            var(--ev-primary);
+  --fc-highlight-color:                 rgba(0, 108, 73, 0.08);
+  --fc-today-bg-color:                  rgba(0, 108, 73, 0.06);
+  --fc-now-indicator-color:             var(--ev-primary);
+  --fc-page-bg-color:                   var(--ev-surface);
+  --fc-neutral-bg-color:                var(--ev-surface-low);
+  --fc-neutral-text-color:              var(--ev-on-surface-variant);
+  --fc-button-text-color:               #fff;
+  --fc-button-bg-color:                 var(--ev-primary);
+  --fc-button-border-color:             var(--ev-primary);
+  --fc-button-hover-bg-color:           var(--ev-secondary);
+  --fc-button-hover-border-color:       var(--ev-secondary);
+  --fc-button-active-bg-color:          var(--ev-on-surface);
+  --fc-button-active-border-color:      var(--ev-on-surface);
+  --fc-small-font-size:                 0.8em;
+  --fc-list-event-hover-bg-color:       var(--ev-surface-low);
+  font-family:                          var(--ns-font-body);
+}
+
+/* No borders (no-line rule) */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: none;
+}
+.fc-theme-standard .fc-scrollgrid {
+  border: none;
+  border-radius: var(--ns-radius-lg);
+  overflow: hidden;
+}
+
+/* Day headers */
+.fc .fc-col-header-cell-cushion {
+  font-family: var(--ns-font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ev-on-surface-variant);
+  padding: 10px 4px;
+}
+
+/* Day numbers */
+.fc .fc-daygrid-day-number {
+  font-family: var(--ns-font-body);
+  font-size: 0.78rem;
+  color: var(--ev-on-surface-variant);
+  padding: 6px 8px;
+}
+
+/* Today highlight */
+.fc .fc-daygrid-day.fc-day-today {
+  background: rgba(0, 108, 73, 0.06);
+}
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: var(--ev-primary);
+  font-weight: 600;
+}
+
+/* Events */
+.fc-event {
+  border-radius: var(--ns-radius-sm) !important;
+  padding: 2px 6px !important;
+  font-size: 0.75rem !important;
+  font-family: var(--ns-font-body) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Toolbar / Navigation buttons */
+.fc .fc-button {
+  font-family: var(--ns-font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: var(--ns-radius-md) !important;
+  padding: 6px 14px !important;
+  letter-spacing: 0.01em;
+  box-shadow: none !important;
+  background: var(--ev-gradient-primary) !important;
+  border: none !important;
+  transition: opacity 0.2s ease;
+}
+.fc .fc-button:hover {
+  opacity: 0.88;
+}
+.fc .fc-button:active,
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background: var(--ev-secondary) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.fc .fc-button:focus {
+  box-shadow: 0 0 0 3px rgba(0, 108, 73, 0.15) !important;
+}
+
+/* Toolbar title */
+.fc .fc-toolbar-title {
+  font-family: var(--ns-font-heading);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ev-on-surface);
+  letter-spacing: -0.02em;
+}
+
+/* Week/month view row background alternation */
+.fc .fc-daygrid-day:hover {
+  background: var(--ev-surface-low);
+  transition: background 0.15s ease;
+}
+
+/* List view */
+.fc-list-event:hover td {
+  background: var(--ev-surface-low) !important;
+}
+.fc-list-event-dot {
+  border-color: var(--ev-primary) !important;
+}
+
+/* Scrollgrid inner border cleanup */
+.fc .fc-scrollgrid-section > * {
+  border: none;
+}
+.fc .fc-scrollgrid-sync-table,
+.fc .fc-col-header,
+.fc .fc-daygrid-body {
+  border-collapse: collapse;
+}
+
+/* Popover (more events) */
+.fc .fc-popover {
+  background: var(--ev-surface-lowest);
+  border: none;
+  border-radius: var(--ns-radius-lg);
+  box-shadow: var(--ev-shadow-float);
+  font-family: var(--ns-font-body);
+}
+.fc .fc-popover-header {
+  background: var(--ev-surface-low);
+  border-radius: var(--ns-radius-lg) var(--ns-radius-lg) 0 0;
+  padding: 8px 12px;
+  color: var(--ev-on-surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Hero + sidebar filter layout (cc- prefix)
+   frmConsultaConsultas.aspx
+   ============================================================ */
+
+/* ── Hero accion principal ── */
+.cc-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: linear-gradient(135deg, #3730a3 0%, #6366f1 100%);
+    border-radius: 14px;
+    padding: 22px 28px;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 4px 24px rgba(55, 48, 163, 0.18);
+}
+.cc-hero-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.cc-hero-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.cc-hero-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+}
+.cc-hero-sub {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.82);
+    margin-top: 3px;
+}
+.cc-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.cc-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: #fff;
+    color: #3730a3;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 26px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.cc-hero-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* Toggle vista */
+.cc-vista-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 4px;
+}
+.btn-vista {
+    border: none;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-vista.activo {
+    background: #fff;
+    color: #3730a3;
+}
+.btn-vista:not(.activo):hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* ── Layout dos columnas ── */
+.cc-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+.cc-main {
+    flex: 1;
+    min-width: 0;
+}
+.cc-sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 80px;
+}
+
+/* ── Sidebar filtros ── */
+.cc-filter-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(19, 27, 46, 0.08);
+    overflow: hidden;
+}
+.cc-filter-header {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cc-filter-header .cc-filter-icon {
+    font-size: 0.9rem;
+    color: #3730a3;
+}
+.cc-filter-header span {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #131b2e;
+}
+.cc-filter-body {
+    padding: 16px 18px;
+}
+.cc-filter-body .form-group {
+    margin-bottom: 12px;
+}
+.cc-filter-body .input__label {
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+}
+.cc-filter-body .form-control {
+    font-size: 0.85rem;
+}
+.cc-filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+.cc-filter-actions .btn {
+    flex: 1;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .cc-layout {
+        flex-direction: column;
+    }
+    .cc-sidebar {
+        width: 100%;
+        position: static;
+    }
+    .cc-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .cc-hero-actions {
+        width: 100%;
+    }
+    .cc-hero-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

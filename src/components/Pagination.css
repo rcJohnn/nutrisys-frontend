@@ -1,0 +1,46 @@
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 1rem;
+}
+
+.page-btn {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--ev-surface-container, #e0e0e0);
+  background: var(--ev-surface-lowest, #fff);
+  color: var(--ev-on-surface, #333);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  padding: 0 6px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--ev-surface-container, #f0f0f0);
+}
+
+.page-btn.active {
+  background: var(--ev-primary, #00664f);
+  color: #fff;
+  border-color: var(--ev-primary, #00664f);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: var(--ev-on-surface-variant, #888);
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}

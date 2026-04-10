@@ -1,0 +1,130 @@
+/* ============================================================
+   styleMedicos.css
+   frmMantenimientoMedicos.aspx
+   ============================================================ */
+
+/* ── Panel Clinicas (collapsible) ── */
+.clinicas-panel {
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 2rem;
+}
+.clinicas-panel__header {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    padding: 1rem 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e8f0;
+    user-select: none;
+}
+.clinicas-panel__header:hover {
+    background: #eef2ff;
+}
+.clinicas-panel__header h5 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #3730a3;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.clinicas-panel__chevron {
+    color: #6366f1;
+    transition: transform 0.25s;
+}
+.clinicas-panel__chevron.open {
+    transform: rotate(180deg);
+}
+.clinicas-panel__body {
+    padding: 1.4rem;
+    display: none;
+}
+.clinicas-panel__body.open {
+    display: block;
+}
+
+/* ── Formulario nueva clinica ── */
+.clinic-form {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.4rem;
+}
+.clinic-form .form-row {
+    margin-bottom: 0;
+}
+
+/* ── Preview logo clinica ── */
+#previewLogoClinica {
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+}
+#imgPreviewClinica {
+    max-width: 150px;
+    max-height: 60px;
+    display: none;
+}
+#txtNoLogoClinica {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* ── Tabla clinicas asignadas ── */
+#tblClinicasMedico {
+    width: 100%;
+    font-size: 0.85rem;
+}
+#tblClinicasMedico th {
+    background: #eef2ff;
+    color: #3730a3;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid #c7d2fe;
+}
+#tblClinicasMedico td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+}
+#tblClinicasMedico tr:nth-child(even) td {
+    background: #f8fafc;
+}
+.clinic-logo-thumb {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+.btn-quitar-clinica {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+}
+#divNoClinicas {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+}
+#divClinicasLoading {
+    font-size: 0.85rem;
+    color: #6366f1;
+    padding: 0.5rem 0;
+}
+.badge-clinica-count {
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.7rem;
+    border-radius: 10px;
+    padding: 0.15rem 0.5rem;
+    margin-left: 0.3rem;
+}

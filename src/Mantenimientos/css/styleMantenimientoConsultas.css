@@ -1,0 +1,128 @@
+/* ── Paciente search dropdown ── */
+.gp-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: var(--ev-surface-container, #fff);
+    border: 1px solid var(--ev-outline-variant, #dee2e6);
+    border-radius: 0 0 var(--ns-radius-md, 8px) var(--ns-radius-md, 8px);
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+.gp-search-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ev-on-surface, #212529);
+    transition: background 0.15s;
+}
+.gp-search-item:hover {
+    background: var(--ev-primary-container, #d1fae5);
+    color: var(--ev-on-primary-container, #003920);
+}
+.gp-search-no-results {
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    color: var(--ev-on-surface-variant, #6c757d);
+    font-style: italic;
+}
+
+/* ── Slot buttons — dominio Analítica (agenda/datos) ── */
+.slots-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+.slot-btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    background: var(--ev-surface-lowest);
+    color: var(--ns-amber-600);
+    font-family: var(--ns-font-body);
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, color .15s, transform .15s;
+    white-space: nowrap;
+}
+.slot-btn:hover  {
+    background: var(--ns-amber-50);
+    transform: translateY(-1px);
+}
+.slot-btn.selected {
+    background: var(--ns-amber-500);
+    color: #fff;
+}
+.slot-btn.ocupado {
+    color: var(--ev-on-surface-variant);
+    cursor: not-allowed;
+    background: var(--ev-surface-container);
+    text-decoration: line-through;
+}
+
+/* ── Badge paciente — dominio Nutrición ── */
+.paciente-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(183, 235, 206, 0.40);
+    border-radius: 7px;
+    padding: 10px 16px;
+    font-family: var(--ns-font-body);
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--ev-on-secondary-container);
+}
+.paciente-badge i { font-size: 1.1rem; }
+
+/* ── Aviso sin slots — warning semántico ── */
+.sin-slots-msg {
+    text-align: center;
+    padding: 18px;
+    background: var(--ns-amber-50);
+    border-radius: 7px;
+    color: var(--ns-amber-700);
+    font-family: var(--ns-font-body);
+    font-size: .85rem;
+    font-weight: 400;
+}
+
+/* ============================================================
+   Selector de clinica en frmMantenimientoConsultas (mc- prefix)
+   ============================================================ */
+.mc-clinica-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem; }
+.mc-clinica-card {
+    display: flex; align-items: center; gap: 0.875rem;
+    padding: 0.75rem 1rem; border-radius: 10px;
+    background: var(--ev-surface-lowest, #fff);
+    box-shadow: 0 0 0 1px rgba(187,202,191,0.25);
+    cursor: pointer; transition: box-shadow 0.15s, background 0.15s;
+}
+.mc-clinica-card:hover { box-shadow: 0 0 0 2px var(--ev-primary, #006c49); background: #f2f3ff; }
+.mc-clinica-card.selected {
+    box-shadow: 0 0 0 2px var(--ev-primary, #006c49);
+    background: rgba(0, 108, 73, 0.05);
+}
+.mc-clinica-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+.mc-clinica-icon {
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    background: #eaedff; border-radius: 6px; color: var(--ev-primary, #006c49);
+    font-size: 1.25rem; flex-shrink: 0;
+}
+.mc-clinica-info { flex: 1; min-width: 0; }
+.mc-clinica-nombre { font-weight: 600; font-size: 0.875rem; color: var(--ev-on-surface, #131b2e); }
+.mc-clinica-dir {
+    font-size: 0.78rem; color: var(--ev-on-surface-variant, #3c4a42);
+    margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mc-clinica-check { color: var(--ev-primary, #006c49); font-size: 1.1rem; opacity: 0; flex-shrink: 0; }
+.mc-clinica-card.selected .mc-clinica-check { opacity: 1; }
+.mc-clinica-auto {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 0.875rem; background: rgba(0,108,73,0.06);
+    border-radius: 8px; font-size: 0.82rem; color: #3c6c54; font-weight: 500;
+}

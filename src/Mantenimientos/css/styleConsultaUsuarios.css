@@ -1,0 +1,156 @@
+/* ============================================================
+   styleConsultaUsuarios.css
+   Prefix: cu-
+   frmConsultaUsuarios.aspx
+   ============================================================ */
+
+/* ── Hero accion principal ── */
+.cu-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: linear-gradient(135deg, #006c49 0%, #10b981 100%);
+    border-radius: 14px;
+    padding: 22px 28px;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 4px 24px rgba(0, 108, 73, 0.18);
+}
+.cu-hero-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.cu-hero-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.cu-hero-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+}
+.cu-hero-sub {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.82);
+    margin-top: 3px;
+}
+.cu-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: #fff;
+    color: #006c49;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 26px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    text-decoration: none;
+}
+.cu-hero-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    color: #006c49;
+    text-decoration: none;
+}
+.cu-hero-btn i {
+    font-size: 1rem;
+}
+
+/* ── Layout dos columnas ── */
+.cu-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+.cu-main {
+    flex: 1;
+    min-width: 0;
+}
+.cu-sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 80px;
+}
+
+/* ── Sidebar filtros ── */
+.cu-filter-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(19, 27, 46, 0.08);
+    overflow: hidden;
+}
+.cu-filter-header {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cu-filter-header .cu-filter-icon {
+    font-size: 0.9rem;
+    color: #006c49;
+}
+.cu-filter-header span {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #131b2e;
+}
+.cu-filter-body {
+    padding: 16px 18px;
+}
+.cu-filter-body .form-group {
+    margin-bottom: 12px;
+}
+.cu-filter-body .input__label {
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+}
+.cu-filter-body .form-control {
+    font-size: 0.85rem;
+}
+.cu-filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+.cu-filter-actions .btn {
+    flex: 1;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .cu-layout {
+        flex-direction: column;
+    }
+    .cu-sidebar {
+        width: 100%;
+        position: static;
+    }
+    .cu-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .cu-hero-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
