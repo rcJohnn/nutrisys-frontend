@@ -1,63 +1,25 @@
 import { apiClient } from './client';
 
-export interface ProgresoConsulta {
-  Fecha: string;
-  Peso: number | null;
-  IMC: number | null;
-  Grasa: number | null;
-  Musculo: number | null;
-  Cintura: number | null;
-  Cadera: number | null;
-  Sistolica: number | null;
-  Diastolica: number | null;
-  Observaciones: string;
-  Recomendaciones: string;
-  Medico: string;
-}
+/**
+ * Filas del endpoint Progreso: el backend devuelve dtDatos con nombres de columna variables.
+ * Tras el interceptor (normalizeKeys) las claves quedan en PascalCase / mixtas según el origen.
+ * La forma canónica para la UI es la que producen mapConsulta / mapBioquimico / mapHistoria en Progreso.tsx.
+ */
+export type ProgresoConsultaApiRow = Record<string, unknown>;
+export type ProgresoBioquimicoApiRow = Record<string, unknown>;
+export type ProgresoHistoriaApiRow = Record<string, unknown>;
 
-export interface ProgresoBioquimico {
-  Fecha: string;
-  Hemoglobina: number | null;
-  Hematocrito: number | null;
-  ColesterolTotal: number | null;
-  HDL: number | null;
-  LDL: number | null;
-  Trigliceridos: number | null;
-  Glicemia: number | null;
-  AcidoUrico: number | null;
-  Albumina: number | null;
-  Creatinina: number | null;
-  TSH: number | null;
-  VitaminaD: number | null;
-  VitaminaB12: number | null;
-  Observaciones: string;
-}
-
-export interface ProgresoHistoria {
-  Objetivos: string;
-  CalidadSueno: string;
-  FuncionIntestinal: string;
-  Fuma: boolean;
-  Alcohol: boolean;
-  FrecuenciaAlcohol: string;
-  ActividadFisica: string;
-  Medicamentos: string;
-  Agua: string;
-  Intolerancias: string;
-  Alergias: string;
-}
-
-export const getConsultas = async (idUsuario: number): Promise<ProgresoConsulta[]> => {
+export const getConsultas = async (idUsuario: number): Promise<ProgresoConsultaApiRow[]> => {
   const { data } = await apiClient.get(`/Progreso/consultas?idUsuario=${idUsuario}`);
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
-export const getBioquimicos = async (idUsuario: number): Promise<ProgresoBioquimico[]> => {
+export const getBioquimicos = async (idUsuario: number): Promise<ProgresoBioquimicoApiRow[]> => {
   const { data } = await apiClient.get(`/Progreso/bioquimicos?idUsuario=${idUsuario}`);
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
-export const getHistoria = async (idUsuario: number): Promise<ProgresoHistoria[]> => {
+export const getHistoria = async (idUsuario: number): Promise<ProgresoHistoriaApiRow[]> => {
   const { data } = await apiClient.get(`/Progreso/historia?idUsuario=${idUsuario}`);
-  return data;
+  return Array.isArray(data) ? data : [];
 };

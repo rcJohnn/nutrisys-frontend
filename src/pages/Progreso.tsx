@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { getConsultas, getBioquimicos, getHistoria } from '../api/progreso';
 import { getUsuarios, type Usuario } from '../api/usuarios';
 import './Progreso.css';
@@ -8,639 +9,658 @@ declare const Chart: any;
 
 type TabType = 'corporal' | 'presion' | 'bioquimicos' | 'notas';
 
+// ── Mapeo defensivo de claves ─────────────────────────────────────────────────
+// normalizeKeys: _[a-z] → uppercase + capitaliza primer char
+// Los SPs pueden variar — usamos múltiples fallbacks para robustez
+
+const mapConsulta = (r: any) => ({
+  fecha     : r.Fecha_Cita ?? r.Fecha_Consulta ?? r.Fecha ?? '',
+  peso      : r.PesoKg     ?? r.Peso_kg        ?? null,
+  imc       : r.IMC        ?? r.Imc            ?? null,
+  grasa     : r.Grasa_Porcentaje ?? r.GrasaG   ?? r.Grasa_g ?? r.Grasa ?? null,
+  musculo   : r.MusculoG   ?? r.Musculo_g      ?? r.Musculo ?? null,
+  cintura   : r.Circunferencia_CinturaCm ?? r.Circunferencia_Cintura_cm ?? r.Cintura ?? null,
+  cadera    : r.Circunferencia_CaderaCm  ?? r.Circunferencia_Cadera_cm  ?? r.Cadera  ?? null,
+  sistolica : r.Presion_Arterial_Sistolica  ?? r.Sistolica  ?? null,
+  diastolica: r.Presion_Arterial_Diastolica ?? r.Diastolica ?? null,
+  observaciones : r.Observaciones_Medico ?? r.Observaciones ?? '',
+  recomendaciones: r.Recomendaciones ?? '',
+  medico    : r.NombreMedico ?? r.Medico ?? '',
+});
+
+const mapBioquimico = (r: any) => ({
+  fecha         : r.Fecha_Analisis ?? r.Fecha_Examen ?? r.Fecha ?? '',
+  hemoglobina   : r.Hemoglobina     ?? null,
+  hematocrito   : r.Hematocrito     ?? null,
+  colesterolTotal: r.Colesterol_Total ?? r.ColesterolTotal ?? null,
+  hdl           : r.HDL             ?? null,
+  ldl           : r.LDL             ?? null,
+  trigliceridos : r.Trigliceridos   ?? null,
+  glicemia      : r.Glicemia        ?? null,
+  acidoUrico    : r.Acido_Urico     ?? r.AcidoUrico   ?? null,
+  albumina      : r.Albumina        ?? null,
+  creatinina    : r.Creatinina      ?? null,
+  tsh           : r.TSH             ?? null,
+  vitaminaD     : r.Vitamina_D      ?? r.VitaminaD    ?? null,
+  vitaminaB12   : r.Vitamina_B12    ?? r.VitaminaB12  ?? null,
+  observaciones : r.Observaciones   ?? '',
+});
+
+const mapHistoria = (r: any) => ({
+  calidadSueno    : r.Calidad_Sueno     ?? r.CalidadSueno     ?? '',
+  funcionIntestinal: r.Funcion_Intestinal ?? r.FuncionIntestinal ?? '',
+  fuma            : r.Fuma   ?? false,
+  alcohol         : r.Alcohol ?? false,
+  actividadFisica : r.Actividad_Fisica  ?? r.ActividadFisica  ?? '',
+  medicamentos    : r.Medicamentos      ?? '',
+  agua            : r.Ingesta_Agua      ?? r.Agua             ?? '',
+  intolerancias   : r.Intolerancias     ?? '',
+  alergias        : r.Alergias_Alimentarias ?? r.Alergias     ?? '',
+});
+
+type Consulta   = ReturnType<typeof mapConsulta>;
+type Bioquimico = ReturnType<typeof mapBioquimico>;
+type Historia   = ReturnType<typeof mapHistoria>;
+
+// ── Paleta ────────────────────────────────────────────────────────────────────
+const C = {
+  emerald    : '#006c49',
+  emeraldBg  : 'rgba(0,108,73,0.10)',
+  blue       : '#3b82f6',
+  blueBg     : 'rgba(59,130,246,0.10)',
+  red        : '#ef4444',
+  redBg      : 'rgba(239,68,68,0.10)',
+  purple     : '#8b5cf6',
+  purpleBg   : 'rgba(139,92,246,0.10)',
+  amber      : '#f59e0b',
+  amberBg    : 'rgba(245,158,11,0.10)',
+  pink       : '#ec4899',
+  pinkBg     : 'rgba(236,72,153,0.10)',
+};
+
+// ── Opciones Chart.js ─────────────────────────────────────────────────────────
+const baseOptions = (yLabel = '') => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false as const,
+  interaction: { mode: 'index' as const, intersect: false },
+  plugins: {
+    legend: { position: 'top' as const, labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+    y: {
+      beginAtZero: false,
+      grid: { color: 'rgba(0,0,0,0.05)' },
+      ticks: { font: { size: 11 } },
+      ...(yLabel ? { title: { display: true, text: yLabel, font: { size: 11 } } } : {}),
+    },
+  },
+});
+
+const ds = (
+  label: string, data: (number | null)[], color: string, bg: string, fill = true,
+) => ({ label, data, borderColor: color, backgroundColor: bg, fill, tension: 0.35,
+        pointRadius: 4, pointHoverRadius: 7, borderWidth: 2 });
+
+/** Chart global (index.html). Actualiza series con update('none') si la estructura coincide. */
+function syncLineChart(canvas: HTMLCanvasElement | null, inst: React.MutableRefObject<any>, cfg: any) {
+  if (!canvas) return;
+  const { labels, datasets } = cfg.data;
+  if (inst.current && inst.current.config?.type === cfg.type
+    && inst.current.data.datasets.length === datasets.length) {
+    inst.current.data.labels = labels;
+    datasets.forEach((d: any, i: number) => {
+      const cur = inst.current.data.datasets[i];
+      cur.data = d.data;
+      cur.label = d.label;
+    });
+    inst.current.update('none');
+    return;
+  }
+  inst.current?.destroy();
+  const ctx = canvas.getContext('2d');
+  if (ctx) inst.current = new Chart(ctx, cfg);
+}
+
+// ── Trend badge ───────────────────────────────────────────────────────────────
+const TrendBadge: React.FC<{ val: number | null; prev: number | null; invertido?: boolean }> = ({
+  val, prev, invertido = false,
+}) => {
+  if (val == null || prev == null || prev === 0) return null;
+  const pct  = ((val - prev) / Math.abs(prev)) * 100;
+  const sube = pct > 0;
+  const ok   = invertido ? !sube : sube;
+  const col  = Math.abs(pct) < 0.1 ? '#94a3b8' : ok ? '#22c55e' : '#ef4444';
+  return (
+    <span className="pg-trend" style={{ color: col }}>
+      {sube ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
+    </span>
+  );
+};
+
+// ── Semáforo ──────────────────────────────────────────────────────────────────
+const semColor = (v: number | null, [lo, hi]: [number, number]) => {
+  if (v == null) return '#94a3b8';
+  return (v < lo || v > hi) ? '#ef4444' : '#22c55e';
+};
+
+// ── Formateo fecha ────────────────────────────────────────────────────────────
+const fmt = (f: string) => {
+  if (!f) return '';
+  const d = new Date(f);
+  return isNaN(d.getTime()) ? f : d.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+// ────────────────────────────────────────────────────────────────────────────
 const Progreso: React.FC = () => {
-  const userName = localStorage.getItem('userName') || 'Usuario';
+  const navigate  = useNavigate();
+  const userName  = localStorage.getItem('userName')  || 'Usuario';
   const userEmail = localStorage.getItem('userEmail') || '';
-  const userType = localStorage.getItem('userType') || 'U';
-  const userId = Number(localStorage.getItem('userId') || '0');
+  const userType  = localStorage.getItem('userType')  || 'U';
+  const userId    = Number(localStorage.getItem('userId') || '0');
 
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm,    setSearchTerm]    = useState('');
   const [searchResults, setSearchResults] = useState<Usuario[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('corporal');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [showResults,   setShowResults]   = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError,   setSearchError]   = useState<string | null>(null);
+  const [activeTab,     setActiveTab]     = useState<TabType>('corporal');
+  const [fechaDesde,    setFechaDesde]    = useState('');
+  const [fechaHasta,    setFechaHasta]    = useState('');
 
-  // Gráficos - se crean y destruyen con el tab activo
-  const [chartInstances, setChartInstances] = useState<Record<string, any>>({});
+  // Canvas refs
+  const refPeso    = useRef<HTMLCanvasElement>(null);
+  const refIMC     = useRef<HTMLCanvasElement>(null);
+  const refCompos  = useRef<HTMLCanvasElement>(null);
+  const refCirc    = useRef<HTMLCanvasElement>(null);
+  const refPresion = useRef<HTMLCanvasElement>(null);
 
-  // Si es usuario normal, cargar su propio progreso automáticamente
+  // Chart instance refs (no state → no re-renders)
+  const instPeso    = useRef<any>(null);
+  const instIMC     = useRef<any>(null);
+  const instCompos  = useRef<any>(null);
+  const instCirc    = useRef<any>(null);
+  const instPresion = useRef<any>(null);
+
+  // Auto-load para usuario tipo U
   useEffect(() => {
     if (userType === 'U' && userId > 0) {
-      getUsuarios({}).then((usuarios) => {
-        const yo = (usuarios as Usuario[]).find((u) => u.Id_Usuario === userId);
-        if (yo) {
-          setSelectedUsuario(yo);
-        }
+      getUsuarios({ estado: 'Activo' }).then((res) => {
+        const yo = res.find((u) => u.Id_Usuario === userId);
+        if (yo) setSelectedUsuario(yo);
       });
     }
   }, [userType, userId]);
 
-  // Búsqueda de usuarios con debounce
-  const buscarUsuarios = useCallback((term: string) => {
-    if (!term || term.length < 2) {
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setSearchTerm(v);
+    setSearchError(null);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!v.trim() || v.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
+      setSearchLoading(false);
       return;
     }
-    getUsuarios({ nombre: term }).then((res) => {
-      setSearchResults(res as Usuario[]);
+    const term = v.trim();
+    searchDebounceRef.current = setTimeout(() => {
+      searchDebounceRef.current = null;
       setShowResults(true);
-    });
+      setSearchLoading(true);
+      getUsuarios({ nombre: term, estado: 'Activo' })
+        .then((r) => {
+          setSearchResults(r);
+        })
+        .catch(() => {
+          setSearchResults([]);
+          setSearchError('No se pudo buscar. Revise la conexión o vuelva a intentar.');
+        })
+        .finally(() => setSearchLoading(false));
+    }, 300);
   }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setSearchTerm(val);
-    const timer = setTimeout(() => buscarUsuarios(val), 300);
-    return () => clearTimeout(timer);
-  };
-
-  const seleccionarUsuario = (u: Usuario) => {
-    setSelectedUsuario(u);
-    setSearchTerm('');
-    setShowResults(false);
-  };
-
-  const limpiarUsuario = () => {
-    setSelectedUsuario(null);
-  };
-
-  // Queries para datos
-  const { data: consultas = [], isLoading: loadingConsultas } = useQuery({
-    queryKey: ['consultas', selectedUsuario?.Id_Usuario],
-    queryFn: () => getConsultas(selectedUsuario!.Id_Usuario),
-    enabled: !!selectedUsuario,
-  });
-
-  const { data: bioquimicos = [] } = useQuery({
-    queryKey: ['bioquimicos', selectedUsuario?.Id_Usuario],
-    queryFn: () => getBioquimicos(selectedUsuario!.Id_Usuario),
-    enabled: !!selectedUsuario,
-  });
-
-  const { data: historia = [] } = useQuery({
-    queryKey: ['historia', selectedUsuario?.Id_Usuario],
-    queryFn: () => getHistoria(selectedUsuario!.Id_Usuario),
-    enabled: !!selectedUsuario,
-  });
-
-  // Destruir todos los gráficos al desmontar
-  useEffect(() => {
-    return () => {
-      Object.values(chartInstances).forEach((chart: any) => chart?.destroy?.());
-    };
+  useEffect(() => () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
   }, []);
 
-  // Destruir gráficos cuando cambia el tab
-  useEffect(() => {
-    Object.values(chartInstances).forEach((chart: any) => chart?.destroy?.());
-    setChartInstances({});
-  }, [activeTab]);
+  // Queries
+  const { data: rawC = [], isLoading: loadingC } = useQuery({
+    queryKey: ['pg-consultas', selectedUsuario?.Id_Usuario],
+    queryFn : () => getConsultas(selectedUsuario!.Id_Usuario),
+    enabled : !!selectedUsuario,
+  });
+  const { data: rawB = [] } = useQuery({
+    queryKey: ['pg-bioquimicos', selectedUsuario?.Id_Usuario],
+    queryFn : () => getBioquimicos(selectedUsuario!.Id_Usuario),
+    enabled : !!selectedUsuario,
+  });
+  const { data: rawH = [] } = useQuery({
+    queryKey: ['pg-historia', selectedUsuario?.Id_Usuario],
+    queryFn : () => getHistoria(selectedUsuario!.Id_Usuario),
+    enabled : !!selectedUsuario,
+  });
 
-  // Crear gráfico individual
-  const crearGrafico = (canvasId: string, config: any) => {
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-    if (!canvas) return;
-    
-    // Destruir anterior si existe
-    if (chartInstances[canvasId]) {
-      chartInstances[canvasId].destroy();
+  // Mapeo defensivo (claves API → modelo de pantalla)
+  const consultas   = useMemo(() => rawC.map((r) => mapConsulta(r)),   [rawC]);
+  const bioquimicos = useMemo(() => rawB.map((r) => mapBioquimico(r)), [rawB]);
+  const historias   = useMemo(() => rawH.map((r) => mapHistoria(r)),   [rawH]);
+
+  // Filtro por fechas (aplicado a gráficos y KPIs)
+  const filtradas: Consulta[] = useMemo(() => consultas.filter((c) => {
+    if (!c.fecha) return true;
+    const d = new Date(c.fecha);
+    if (fechaDesde && d < new Date(fechaDesde))                    return false;
+    if (fechaHasta && d > new Date(fechaHasta + 'T23:59:59'))      return false;
+    return true;
+  }), [consultas, fechaDesde, fechaHasta]);
+
+  const ultimo   = filtradas[filtradas.length - 1] ?? null;
+  const anterior = filtradas[filtradas.length - 2] ?? null;
+  const bio: Bioquimico | null  = bioquimicos[0] ?? null;
+  const hist: Historia | null   = historias[0]   ?? null;
+
+  // ── Gráficos: Evolución Corporal ───────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== 'corporal') return;
+    if (!filtradas.length) {
+      [instPeso, instIMC, instCompos, instCirc].forEach((r) => {
+        r.current?.destroy();
+        r.current = null;
+      });
+      return;
     }
+    const labels = filtradas.map((c) => fmt(c.fecha));
+    syncLineChart(refPeso.current,   instPeso,   { type: 'line', data: { labels, datasets: [ds('Peso (kg)', filtradas.map((c) => c.peso),    C.emerald, C.emeraldBg)] }, options: baseOptions('kg')  });
+    syncLineChart(refIMC.current,    instIMC,    { type: 'line', data: { labels, datasets: [ds('IMC',       filtradas.map((c) => c.imc),     C.blue,    C.blueBg)]    }, options: baseOptions('kg/m²') });
+    syncLineChart(refCompos.current, instCompos, { type: 'line', data: { labels, datasets: [ds('Grasa (%)', filtradas.map((c) => c.grasa),   C.red,     C.redBg), ds('Músculo (%)', filtradas.map((c) => c.musculo), C.purple, C.purpleBg)] }, options: baseOptions('%') });
+    syncLineChart(refCirc.current,   instCirc,   { type: 'line', data: { labels, datasets: [ds('Cintura (cm)', filtradas.map((c) => c.cintura), C.amber, C.amberBg), ds('Cadera (cm)', filtradas.map((c) => c.cadera), C.blue, C.blueBg)] }, options: baseOptions('cm') });
+    return () => {
+      [instPeso, instIMC, instCompos, instCirc].forEach((r) => {
+        r.current?.destroy();
+        r.current = null;
+      });
+    };
+  }, [activeTab, filtradas]);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const chart = new Chart(ctx, config);
-    setChartInstances(prev => ({ ...prev, [canvasId]: chart }));
-  };
-
-  // Gráfico de Peso
+  // ── Gráfico: Presión Arterial ─────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== 'corporal' || !consultas.length) return;
-    
-    const labels = consultas.map((c) => c.Fecha).reverse();
-    const pesos = consultas.map((c) => c.Peso).reverse();
-
-    crearGrafico('chartPeso', {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Peso (kg)',
-          data: pesos,
-          borderColor: '#4CAF50',
-          backgroundColor: 'rgba(76, 175, 80, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: true, position: 'top' },
-        },
-        scales: {
-          y: { beginAtZero: false }
-        }
-      }
-    });
-  }, [activeTab, consultas]);
-
-  // Gráfico de IMC
-  useEffect(() => {
-    if (activeTab !== 'corporal' || !consultas.length) return;
-    
-    const labels = consultas.map((c) => c.Fecha).reverse();
-    const imcs = consultas.map((c) => c.IMC).reverse();
-
-    crearGrafico('chartIMC', {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'IMC',
-          data: imcs,
-          borderColor: '#2196F3',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-      }
-    });
-  }, [activeTab, consultas]);
-
-  // Gráfico de Composición Corporal
-  useEffect(() => {
-    if (activeTab !== 'corporal' || !consultas.length) return;
-    
-    const labels = consultas.map((c) => c.Fecha).reverse();
-    const grasa = consultas.map((c) => c.Grasa).reverse();
-    const musculo = consultas.map((c) => c.Musculo).reverse();
-
-    crearGrafico('chartComposicion', {
+    if (activeTab !== 'presion') return;
+    if (!filtradas.length) {
+      instPresion.current?.destroy();
+      instPresion.current = null;
+      return;
+    }
+    const labels = filtradas.map((c) => fmt(c.fecha));
+    syncLineChart(refPresion.current, instPresion, {
       type: 'line',
       data: {
         labels,
         datasets: [
-          { label: 'Grasa (%)', data: grasa, borderColor: '#f44336', backgroundColor: 'rgba(244, 67, 54, 0.1)', fill: true, tension: 0.3, pointRadius: 4 },
-          { label: 'Músculo (%)', data: musculo, borderColor: '#9C27B0', backgroundColor: 'rgba(156, 39, 176, 0.1)', fill: true, tension: 0.3, pointRadius: 4 }
-        ]
+          ds('Sistólica (mmHg)',  filtradas.map((c) => c.sistolica),  C.pink, C.pinkBg, false),
+          ds('Diastólica (mmHg)', filtradas.map((c) => c.diastolica), C.blue, C.blueBg, false),
+        ],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-      }
+      options: baseOptions('mmHg'),
     });
-  }, [activeTab, consultas]);
+    return () => {
+      instPresion.current?.destroy();
+      instPresion.current = null;
+    };
+  }, [activeTab, filtradas]);
 
-  // Gráfico de Circunferencias
-  useEffect(() => {
-    if (activeTab !== 'corporal' || !consultas.length) return;
-    
-    const labels = consultas.map((c) => c.Fecha).reverse();
-    const cintura = consultas.map((c) => c.Cintura).reverse();
-    const cadera = consultas.map((c) => c.Cadera).reverse();
+  // Cleanup on unmount
+  useEffect(() => () => {
+    [instPeso, instIMC, instCompos, instCirc, instPresion].forEach(r => r.current?.destroy());
+  }, []);
 
-    crearGrafico('chartCircunferencias', {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Cintura (cm)', data: cintura, borderColor: '#FF9800', backgroundColor: 'rgba(255, 152, 0, 0.1)', fill: true, tension: 0.3, pointRadius: 4 },
-          { label: 'Cadera (cm)', data: cadera, borderColor: '#00BCD4', backgroundColor: 'rgba(0, 188, 212, 0.1)', fill: true, tension: 0.3, pointRadius: 4 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-      }
-    });
-  }, [activeTab, consultas]);
-
-  // Gráfico de Presión Arterial
-  useEffect(() => {
-    if (activeTab !== 'presion' || !consultas.length) return;
-    
-    const labels = consultas.map((c) => c.Fecha).reverse();
-    const sistolica = consultas.map((c) => c.Sistolica).reverse();
-    const diastolica = consultas.map((c) => c.Diastolica).reverse();
-
-    crearGrafico('chartPresion', {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Sistólica (mmHg)', data: sistolica, borderColor: '#E91E63', backgroundColor: 'rgba(233, 30, 99, 0.1)', fill: true, tension: 0.3, pointRadius: 4 },
-          { label: 'Diastólica (mmHg)', data: diastolica, borderColor: '#3F51B5', backgroundColor: 'rgba(63, 81, 181, 0.1)', fill: true, tension: 0.3, pointRadius: 4 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-      }
-    });
-  }, [activeTab, consultas]);
-
-  const getSemaphoreColor = (value: number | null, normal: [number, number]): string => {
-    if (value === null) return '#9e9e9e';
-    if (value < normal[0] || value > normal[1]) return '#f44336';
-    return '#4CAF50';
-  };
-
-  const bioquimico = bioquimicos[0];
-  const ultimaHistoria = historia[0];
-
-  const showEmptyState = selectedUsuario && consultas.length === 0 && !loadingConsultas;
-  const showContent = selectedUsuario && consultas.length > 0;
-  const showSearch = userType !== 'U';
-
-  const nombreCompleto = selectedUsuario 
+  // ── Helpers de render ─────────────────────────────────────────────────────
+  const showSearch  = userType !== 'U';
+  const hasData     = filtradas.length > 0;
+  const nombreCompleto = selectedUsuario
     ? `${selectedUsuario.Nombre} ${selectedUsuario.Prim_Apellido} ${selectedUsuario.Seg_Apellido}`.trim()
     : '';
 
+  const TAB_LABELS: Record<TabType, string> = {
+    corporal   : '⚖️ Evolución Corporal',
+    presion    : '🫀 Presión Arterial',
+    bioquimicos: '🔬 Bioquímicos',
+    notas      : '📋 Notas Clínicas',
+  };
+
+  const KPIS: { label: string; val: number | null; prev: number | null; unit: string; inv: boolean }[] = [
+    { label: 'Peso',    val: ultimo?.peso   ?? null, prev: anterior?.peso   ?? null, unit: 'kg',    inv: true  },
+    { label: 'IMC',     val: ultimo?.imc    ?? null, prev: anterior?.imc    ?? null, unit: 'kg/m²', inv: true  },
+    { label: 'Grasa',   val: ultimo?.grasa  ?? null, prev: anterior?.grasa  ?? null, unit: '%',     inv: true  },
+    { label: 'Músculo', val: ultimo?.musculo?? null, prev: anterior?.musculo?? null, unit: '%',     inv: false },
+  ];
+
   return (
     <div className="progreso-page">
+
+      {/* Breadcrumb */}
       <nav className="cm-breadcrumb">
         <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
         <span className="cm-bc-sep"> &rsaquo; </span>
         <span className="cm-bc-active">Mi Progreso</span>
       </nav>
 
-      <div className="welcome-msg pt-3 pb-4">
-        <h1>Hola <span className="text-primary">{userName}</span>, Bienvenido</h1>
-        <p>{userEmail}</p>
+      {/* Welcome */}
+      <div className="pg-welcome">
+        <h1 className="pg-welcome-title">Hola, <span>{userName}</span></h1>
+        <p className="pg-welcome-sub">{userEmail}</p>
       </div>
 
-      {/* Búsqueda de paciente - solo Admin y Médico */}
+      {/* Búsqueda (admin / médico) */}
       {showSearch && (
-        <div className="card card_border py-2 mb-4">
-          <div className="cards__heading">
-            <h3>Selección de Paciente <span></span></h3>
+        <div className="pg-search-card">
+          <div className="pg-search-card-title">
+            <i className="fa fa-user-circle-o"></i> Seleccionar paciente
           </div>
-          <div className="card-body">
-            {selectedUsuario ? (
-              <div className="pg-usuario-seleccionado">
-                <div className="pg-usuario-info">
-                  <div className="pg-usuario-avatar">{nombreCompleto.charAt(0)}</div>
-                  <div className="pg-usuario-nombre">{nombreCompleto}</div>
-                </div>
-                <button className="pg-btn-cambiar" onClick={limpiarUsuario}>Cambiar</button>
+          {selectedUsuario ? (
+            <div className="pg-usuario-seleccionado">
+              <div className="pg-usuario-info">
+                <div className="pg-usuario-avatar">{nombreCompleto.charAt(0)}</div>
+                <div className="pg-usuario-nombre">{nombreCompleto}</div>
               </div>
-            ) : (
-              <div className="form-group">
-                <label className="input__label">Paciente *</label>
-                <div className="pg-search-container">
-                  <span className="pg-search-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control input-style pg-search-input"
-                    placeholder="Buscar paciente por nombre..."
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                    autoComplete="off"
-                  />
-                  {showResults && searchResults.length > 0 && (
-                    <div className="pg-search-dropdown">
-                      {searchResults.map((u) => (
-                        <div key={u.Id_Usuario} className="pg-search-item" onClick={() => seleccionarUsuario(u)}>
-                          <div className="pg-search-nombre">{u.Nombre} {u.Prim_Apellido} {u.Seg_Apellido}</div>
-                          <div className="pg-search-email">{u.Correo}</div>
-                        </div>
-                      ))}
-                    </div>
+              <button className="pg-btn-cambiar" onClick={() => setSelectedUsuario(null)}>Cambiar paciente</button>
+            </div>
+          ) : (
+            <div className="pg-search-wrap">
+              <i className="fa fa-search pg-search-ico"></i>
+              <input
+                type="text"
+                className="pg-search-input"
+                placeholder="Buscar paciente por nombre..."
+                value={searchTerm}
+                onChange={handleSearch}
+                autoComplete="off"
+              />
+              {showResults && (
+                <div className="pg-search-dropdown">
+                  {searchLoading && (
+                    <div className="pg-search-item pg-search-item--muted">Buscando…</div>
                   )}
+                  {!searchLoading && searchError && (
+                    <div className="pg-search-item pg-search-item--muted">{searchError}</div>
+                  )}
+                  {!searchLoading && !searchError && searchResults.length === 0 && (
+                    <div className="pg-search-item pg-search-item--muted">Sin coincidencias. Pruebe con otro nombre.</div>
+                  )}
+                  {!searchLoading && !searchError && searchResults.map((u) => (
+                    <div key={u.Id_Usuario} className="pg-search-item"
+                      onClick={() => {
+                        setSelectedUsuario(u);
+                        setSearchTerm('');
+                        setShowResults(false);
+                        setSearchResults([]);
+                      }}>
+                      <div className="pg-search-nombre">{u.Nombre} {u.Prim_Apellido} {u.Seg_Apellido}</div>
+                      <div className="pg-search-email">{u.Correo}</div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Contenido principal */}
-      {showContent && (
+      {/* Spinner */}
+      {loadingC && (
+        <div className="pg-spinner-wrap">
+          <div className="pg-spinner-dot"></div>
+          <p className="pg-spinner-text">Cargando datos...</p>
+        </div>
+      )}
+
+      {/* Sin datos */}
+      {selectedUsuario && !loadingC && !hasData && (
+        <div className="pg-empty">
+          <div className="pg-empty-icon">📊</div>
+          <div className="pg-empty-title">Sin datos registrados</div>
+          <div className="pg-empty-sub">No hay consultas completadas con métricas para este paciente.</div>
+        </div>
+      )}
+
+      {/* Dashboard */}
+      {selectedUsuario && hasData && (
         <>
-          {/* Header paciente */}
-          <div className="pg-patient-header">
-            <div className="pg-patient-avatar">{nombreCompleto.charAt(0)}</div>
-            <div className="pg-patient-info">
-              <div className="pg-patient-name">{nombreCompleto}</div>
-              <div className="pg-patient-meta">{selectedUsuario?.Correo}</div>
+          {/* Banner + filtro */}
+          <div className="pg-banner">
+            <div className="pg-banner-left">
+              <div className="pg-banner-avatar">{nombreCompleto.charAt(0)}</div>
+              <div>
+                <div className="pg-banner-name">{nombreCompleto}</div>
+                <div className="pg-banner-meta">
+                  {selectedUsuario.Correo} · {filtradas.length} consulta{filtradas.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+            <div className="pg-filter-bar">
+              <span className="pg-filter-label">Período</span>
+              <input type="date" className="pg-filter-input" value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)} />
+              <span className="pg-filter-sep">→</span>
+              <input type="date" className="pg-filter-input" value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)} />
+              {(fechaDesde || fechaHasta) && (
+                <button className="pg-filter-reset"
+                  onClick={() => { setFechaDesde(''); setFechaHasta(''); }}>✕</button>
+              )}
             </div>
           </div>
 
-          {/* Filtro de fechas */}
-          <div className="pg-filter-bar">
-            <span className="pg-filter-label">Período</span>
-            <div className="pg-filter-group">
-              <label className="pg-filter-input-label">Desde</label>
-              <input type="date" className="pg-filter-input" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-            </div>
-            <div className="pg-filter-group">
-              <label className="pg-filter-input-label">Hasta</label>
-              <input type="date" className="pg-filter-input" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
-            </div>
-            <button className="pg-filter-reset" onClick={() => { setFechaDesde(''); setFechaHasta(''); }}>↺ Todas</button>
+          {/* KPIs */}
+          <div className="pg-kpi-row">
+            {KPIS.map(({ label, val, prev, unit, inv }) => (
+              <div key={label} className="pg-kpi-card">
+                <div className="pg-kpi-label">{label}</div>
+                <div className="pg-kpi-value">
+                  {val ?? '—'}
+                  {val != null && <span className="pg-kpi-unit"> {unit}</span>}
+                </div>
+                <TrendBadge val={val} prev={prev} invertido={inv} />
+                {anterior && val != null && prev != null && (
+                  <div className="pg-kpi-prev">Ant: {prev} {unit}</div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Tabs */}
-          <div className="pg-tabs-container">
+          <div className="pg-tabs-wrap">
             <div className="pg-tabs">
-              <button className={`pg-tab-btn ${activeTab === 'corporal' ? 'active' : ''}`} onClick={() => setActiveTab('corporal')}>⚖️ Evolución Corporal</button>
-              <button className={`pg-tab-btn ${activeTab === 'presion' ? 'active' : ''}`} onClick={() => setActiveTab('presion')}>🫀 Presión Arterial</button>
-              <button className={`pg-tab-btn ${activeTab === 'bioquimicos' ? 'active' : ''}`} onClick={() => setActiveTab('bioquimicos')}>🔬 Estado Actual</button>
-              <button className={`pg-tab-btn ${activeTab === 'notas' ? 'active' : ''}`} onClick={() => setActiveTab('notas')}>📋 Notas Clínicas</button>
+              {(Object.keys(TAB_LABELS) as TabType[]).map((tab) => (
+                <button key={tab}
+                  className={`pg-tab-btn${activeTab === tab ? ' active' : ''}`}
+                  onClick={() => setActiveTab(tab)}>
+                  {TAB_LABELS[tab]}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Tab: Evolución Corporal */}
+          {/* ── Tab: Evolución Corporal ── */}
           {activeTab === 'corporal' && (
             <div className="pg-tab-content">
-              <div className="pg-cards-row">
-                <div className="pg-summary-card">
-                  <div className="pg-summary-label">Peso Actual</div>
-                  <div className="pg-summary-value">{consultas[consultas.length - 1]?.Peso ?? '-'} <span className="pg-summary-unit">kg</span></div>
+              <div className="pg-chart-grid-2">
+                <div className="pg-chart-card">
+                  <div className="pg-chart-title">📈 Evolución del Peso</div>
+                  <div className="pg-chart-wrap"><canvas ref={refPeso}></canvas></div>
                 </div>
-                <div className="pg-summary-card">
-                  <div className="pg-summary-label">IMC Actual</div>
-                  <div className="pg-summary-value">{consultas[consultas.length - 1]?.IMC ?? '-'}</div>
-                </div>
-                <div className="pg-summary-card">
-                  <div className="pg-summary-label">Grasa Actual</div>
-                  <div className="pg-summary-value">{consultas[consultas.length - 1]?.Grasa ?? '-'} <span className="pg-summary-unit">%</span></div>
-                </div>
-                <div className="pg-summary-card">
-                  <div className="pg-summary-label">Músculo Actual</div>
-                  <div className="pg-summary-value">{consultas[consultas.length - 1]?.Musculo ?? '-'} <span className="pg-summary-unit">%</span></div>
+                <div className="pg-chart-card">
+                  <div className="pg-chart-title">📊 Índice de Masa Corporal</div>
+                  <div className="pg-chart-wrap"><canvas ref={refIMC}></canvas></div>
                 </div>
               </div>
-
-              <div className="pg-chart-card">
-                <div className="pg-chart-title">📈 Evolución del Peso</div>
-                <div className="pg-chart-wrap"><canvas id="chartPeso"></canvas></div>
-              </div>
-
-              <div className="pg-chart-card">
-                <div className="pg-chart-title">📊 Índice de Masa Corporal (IMC)</div>
-                <div className="pg-chart-wrap"><canvas id="chartIMC"></canvas></div>
-              </div>
-
               <div className="pg-chart-card">
                 <div className="pg-chart-title">💪 Composición Corporal — Grasa vs Músculo</div>
-                <div className="pg-chart-wrap"><canvas id="chartComposicion"></canvas></div>
+                <div className="pg-chart-wrap"><canvas ref={refCompos}></canvas></div>
               </div>
-
               <div className="pg-chart-card">
                 <div className="pg-chart-title">📏 Circunferencias — Cintura y Cadera</div>
-                <div className="pg-chart-wrap"><canvas id="chartCircunferencias"></canvas></div>
+                <div className="pg-chart-wrap"><canvas ref={refCirc}></canvas></div>
               </div>
             </div>
           )}
 
-          {/* Tab: Presión Arterial */}
+          {/* ── Tab: Presión Arterial ── */}
           {activeTab === 'presion' && (
             <div className="pg-tab-content">
-              <div className="pg-chart-card pg-chart-card--full">
+              <div className="pg-pa-legend">
+                <span className="pg-pa-badge pg-pa-normal">✅ Normal (&lt;120/80)</span>
+                <span className="pg-pa-badge pg-pa-elevada">⚠️ Elevada (120–129)</span>
+                <span className="pg-pa-badge pg-pa-alta">🔴 Alta (≥130/80)</span>
+              </div>
+              <div className="pg-chart-card">
                 <div className="pg-chart-title">🫀 Evolución de la Presión Arterial</div>
-                <div className="pg-pa-legend">
-                  <span className="pg-pa-badge normal">✅ Normal (&lt;120/80)</span>
-                  <span className="pg-pa-badge elevada">⚠️ Elevada (120-129)</span>
-                  <span className="pg-pa-badge alta">🔴 Alta (≥130/80)</span>
-                </div>
-                <div className="pg-chart-wrap pg-chart-wrap--large"><canvas id="chartPresion"></canvas></div>
+                <div className="pg-chart-wrap pg-chart-wrap--xl"><canvas ref={refPresion}></canvas></div>
               </div>
             </div>
           )}
 
-          {/* Tab: Bioquímicos */}
+          {/* ── Tab: Bioquímicos ── */}
           {activeTab === 'bioquimicos' && (
             <div className="pg-tab-content">
-              {bioquimico ? (
+              {bio ? (
                 <>
                   <div className="pg-bio-fecha">
-                    <i className="fa fa-calendar"></i> Última actualización: {bioquimico.Fecha}
+                    <i className="fa fa-calendar-o"></i> Última actualización: {fmt(bio.fecha)}
                   </div>
 
                   <div className="pg-section-title">🩸 Perfil Lipídico y Metabólico</div>
                   <div className="pg-semaforo-grid">
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.ColesterolTotal, [0, 200]) }}>
-                      <div className="pg-semaforo-label">Colesterol Total</div>
-                      <div className="pg-semaforo-value">{bioquimico.ColesterolTotal ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.HDL, [40, 60]) }}>
-                      <div className="pg-semaforo-label">HDL (Bueno)</div>
-                      <div className="pg-semaforo-value">{bioquimico.HDL ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.LDL, [0, 100]) }}>
-                      <div className="pg-semaforo-label">LDL (Malo)</div>
-                      <div className="pg-semaforo-value">{bioquimico.LDL ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.Trigliceridos, [0, 150]) }}>
-                      <div className="pg-semaforo-label">Triglicéridos</div>
-                      <div className="pg-semaforo-value">{bioquimico.Trigliceridos ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.Glicemia, [70, 100]) }}>
-                      <div className="pg-semaforo-label">Glicemia</div>
-                      <div className="pg-semaforo-value">{bioquimico.Glicemia ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
+                    {([
+                      { label: 'Colesterol Total', v: bio.colesterolTotal, r: [0,   200] as [number,number], u: 'mg/dL' },
+                      { label: 'HDL (Bueno)',       v: bio.hdl,            r: [40,  60]  as [number,number], u: 'mg/dL' },
+                      { label: 'LDL (Malo)',        v: bio.ldl,            r: [0,   100] as [number,number], u: 'mg/dL' },
+                      { label: 'Triglicéridos',     v: bio.trigliceridos,  r: [0,   150] as [number,number], u: 'mg/dL' },
+                      { label: 'Glicemia',          v: bio.glicemia,       r: [70,  100] as [number,number], u: 'mg/dL' },
+                    ]).map(({ label, v, r, u }) => (
+                      <div key={label} className="pg-semaforo-item" style={{ borderLeftColor: semColor(v, r) }}>
+                        <div className="pg-semaforo-label">{label}</div>
+                        <div className="pg-semaforo-value">{v ?? '—'}</div>
+                        <div className="pg-semaforo-unit">{u}</div>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="pg-section-title">🔬 Otros Indicadores</div>
                   <div className="pg-semaforo-grid">
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.Hemoglobina, [12, 17]) }}>
-                      <div className="pg-semaforo-label">Hemoglobina</div>
-                      <div className="pg-semaforo-value">{bioquimico.Hemoglobina ?? '-'}</div>
-                      <div className="pg-semaforo-unit">g/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.Hematocrito, [36, 50]) }}>
-                      <div className="pg-semaforo-label">Hematocrito</div>
-                      <div className="pg-semaforo-value">{bioquimico.Hematocrito ?? '-'}</div>
-                      <div className="pg-semaforo-unit">%</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.AcidoUrico, [2.5, 7]) }}>
-                      <div className="pg-semaforo-label">Ácido Úrico</div>
-                      <div className="pg-semaforo-value">{bioquimico.AcidoUrico ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.Creatinina, [0.7, 1.3]) }}>
-                      <div className="pg-semaforo-label">Creatinina</div>
-                      <div className="pg-semaforo-value">{bioquimico.Creatinina ?? '-'}</div>
-                      <div className="pg-semaforo-unit">mg/dL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.TSH, [0.4, 4]) }}>
-                      <div className="pg-semaforo-label">TSH</div>
-                      <div className="pg-semaforo-value">{bioquimico.TSH ?? '-'}</div>
-                      <div className="pg-semaforo-unit">μIU/mL</div>
-                    </div>
-                    <div className="pg-semaforo-item" style={{ borderLeftColor: getSemaphoreColor(bioquimico.VitaminaD, [30, 100]) }}>
-                      <div className="pg-semaforo-label">Vitamina D</div>
-                      <div className="pg-semaforo-value">{bioquimico.VitaminaD ?? '-'}</div>
-                      <div className="pg-semaforo-unit">ng/mL</div>
-                    </div>
+                    {([
+                      { label: 'Hemoglobina',  v: bio.hemoglobina,  r: [12,  17]   as [number,number], u: 'g/dL'    },
+                      { label: 'Hematocrito',  v: bio.hematocrito,  r: [36,  50]   as [number,number], u: '%'       },
+                      { label: 'Ácido Úrico',  v: bio.acidoUrico,   r: [2.5, 7]    as [number,number], u: 'mg/dL'  },
+                      { label: 'Creatinina',   v: bio.creatinina,   r: [0.7, 1.3]  as [number,number], u: 'mg/dL'  },
+                      { label: 'TSH',          v: bio.tsh,          r: [0.4, 4]    as [number,number], u: 'μIU/mL' },
+                      { label: 'Vitamina D',   v: bio.vitaminaD,    r: [30,  100]  as [number,number], u: 'ng/mL'  },
+                    ]).filter(x => x.v != null).map(({ label, v, r, u }) => (
+                      <div key={label} className="pg-semaforo-item" style={{ borderLeftColor: semColor(v, r) }}>
+                        <div className="pg-semaforo-label">{label}</div>
+                        <div className="pg-semaforo-value">{v}</div>
+                        <div className="pg-semaforo-unit">{u}</div>
+                      </div>
+                    ))}
                   </div>
 
-                  {ultimaHistoria && (
-                    <>
-                      <div className="pg-section-title">🏃 Hábitos y Estilo de Vida</div>
-                      <div className="pg-habitos-grid">
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">😴</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Calidad del Sueño</div>
-                            <div className="pg-habito-value">{ultimaHistoria.CalidadSueno || '-'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">🚽</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Función Intestinal</div>
-                            <div className="pg-habito-value">{ultimaHistoria.FuncionIntestinal || '-'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">🚬</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">¿Fuma?</div>
-                            <div className="pg-habito-value">{ultimaHistoria.Fuma ? 'Sí' : 'No'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">🍷</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">¿Consume Alcohol?</div>
-                            <div className="pg-habito-value">{ultimaHistoria.Alcohol ? 'Sí' : 'No'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">🏃</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Actividad Física</div>
-                            <div className="pg-habito-value">{ultimaHistoria.ActividadFisica || '-'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item">
-                          <div className="pg-habito-icon">💧</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Ingesta de Agua</div>
-                            <div className="pg-habito-value">{ultimaHistoria.Agua || '-'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item pg-habito-item--full">
-                          <div className="pg-habito-icon">💊</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Medicamentos</div>
-                            <div className="pg-habito-value">{ultimaHistoria.Medicamentos || '-'}</div>
-                          </div>
-                        </div>
-                        <div className="pg-habito-item pg-habito-item--full">
-                          <div className="pg-habito-icon">⚠️</div>
-                          <div className="pg-habito-content">
-                            <div className="pg-habito-label">Intolerancias / Alergias</div>
-                            <div className="pg-habito-value">{ultimaHistoria.Intolerancias || '-'} / {ultimaHistoria.Alergias || '-'}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
+                  {bio.observaciones && (
+                    <div className="pg-bio-obs">{bio.observaciones}</div>
                   )}
                 </>
               ) : (
                 <div className="pg-empty">
                   <div className="pg-empty-icon">🔬</div>
                   <div className="pg-empty-title">Sin análisis bioquímicos</div>
-                  <div className="pg-empty-sub">No hay registros de análisis bioquímicos para este paciente.</div>
+                  <div className="pg-empty-sub">No hay registros de análisis para este paciente.</div>
                 </div>
+              )}
+
+              {hist && (
+                <>
+                  <div className="pg-section-title">🏃 Hábitos y Estilo de Vida</div>
+                  <div className="pg-habitos-grid">
+                    {([
+                      { icon: '😴', label: 'Calidad del Sueño',   val: hist.calidadSueno },
+                      { icon: '🚽', label: 'Función Intestinal',   val: hist.funcionIntestinal },
+                      { icon: '🚬', label: '¿Fuma?',               val: hist.fuma    ? 'Sí' : 'No' },
+                      { icon: '🍷', label: '¿Alcohol?',            val: hist.alcohol ? 'Sí' : 'No' },
+                      { icon: '🏃', label: 'Actividad Física',     val: hist.actividadFisica },
+                      { icon: '💧', label: 'Ingesta de Agua',      val: hist.agua },
+                    ]).map(({ icon, label, val }) => val ? (
+                      <div key={label} className="pg-habito-item">
+                        <div className="pg-habito-icon">{icon}</div>
+                        <div>
+                          <div className="pg-habito-label">{label}</div>
+                          <div className="pg-habito-value">{val}</div>
+                        </div>
+                      </div>
+                    ) : null)}
+                    {hist.medicamentos && (
+                      <div className="pg-habito-item pg-habito-full">
+                        <div className="pg-habito-icon">💊</div>
+                        <div>
+                          <div className="pg-habito-label">Medicamentos</div>
+                          <div className="pg-habito-value">{hist.medicamentos}</div>
+                        </div>
+                      </div>
+                    )}
+                    {(hist.intolerancias || hist.alergias) && (
+                      <div className="pg-habito-item pg-habito-full">
+                        <div className="pg-habito-icon">⚠️</div>
+                        <div>
+                          <div className="pg-habito-label">Intolerancias / Alergias</div>
+                          <div className="pg-habito-value">{hist.intolerancias || '—'} / {hist.alergias || '—'}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
 
-          {/* Tab: Notas Clínicas */}
+          {/* ── Tab: Notas Clínicas ── */}
           {activeTab === 'notas' && (
             <div className="pg-tab-content">
-              <div className="pg-section-title">📋 Historial de Consultas</div>
-              {consultas.length > 0 ? (
-                <div className="pg-timeline">
-                  {consultas.map((consulta, index) => (
-                    <div key={index} className="pg-timeline-item">
+              <div className="pg-timeline">
+                {[...filtradas].reverse().map((c, i) => {
+                  const d = c.fecha ? new Date(c.fecha) : null;
+                  return (
+                    <div key={i} className="pg-timeline-item">
                       <div className="pg-timeline-date">
-                        <div className="pg-timeline-day">{new Date(consulta.Fecha).getDate()}</div>
-                        <div className="pg-timeline-month">{new Date(consulta.Fecha).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}</div>
+                        <div className="pg-timeline-day">{d ? d.getDate() : '?'}</div>
+                        <div className="pg-timeline-month">
+                          {d ? d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }) : ''}
+                        </div>
                       </div>
                       <div className="pg-timeline-content">
-                        <div className="pg-timeline-header">
-                          <span className="pg-timeline-medico">👨‍⚕️ {consulta.Medico}</span>
-                        </div>
-                        {consulta.Observaciones && (
-                          <div className="pg-timeline-observaciones">{consulta.Observaciones}</div>
+                        <div className="pg-timeline-medico">👨‍⚕️ {c.medico || 'Médico'}</div>
+                        {c.observaciones && (
+                          <div className="pg-timeline-obs">{c.observaciones}</div>
                         )}
-                        {consulta.Recomendaciones && (
-                          <div className="pg-timeline-recomendaciones">
-                            <strong>💡 Recomendaciones:</strong> {consulta.Recomendaciones}
+                        {c.recomendaciones && (
+                          <div className="pg-timeline-rec">
+                            <strong>💡 Recomendaciones:</strong> {c.recomendaciones}
                           </div>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="pg-empty">
-                  <div className="pg-empty-icon">📋</div>
-                  <div className="pg-empty-title">Sin consultas registradas</div>
-                  <div className="pg-empty-sub">No hay consultas en el historial de este paciente.</div>
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           )}
         </>
       )}
 
-      {/* Empty state cuando no hay usuario seleccionado */}
-      {!selectedUsuario && !showSearch && (
+      {!selectedUsuario && !showSearch && !loadingC && (
         <div className="pg-empty">
-          <div className="pg-empty-icon">📊</div>
+          <div className="pg-empty-icon">⏳</div>
           <div className="pg-empty-title">Cargando...</div>
-          <div className="pg-empty-sub">Obteniendo información del paciente.</div>
-        </div>
-      )}
-
-      {/* Empty state cuando no hay datos */}
-      {showEmptyState && (
-        <div className="pg-empty">
-          <div className="pg-empty-icon">📊</div>
-          <div className="pg-empty-title">Sin datos registrados</div>
-          <div className="pg-empty-sub">Aún no hay consultas completadas con métricas para este paciente.</div>
-        </div>
-      )}
-
-      {/* Spinner */}
-      {loadingConsultas && (
-        <div className="pg-spinner-wrap">
-          <div className="pg-spinner-dot"></div>
-          <div className="pg-spinner-text">Cargando datos...</div>
         </div>
       )}
     </div>

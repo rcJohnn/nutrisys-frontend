@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getConsultaById, getAntropometria, getDistribucionMacros } from '../api/consultas';
+import { getAnalisisBioquimico } from '../api/completarMetricas';
 import './DetalleConsulta.css';
 
 const DetalleConsulta: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const consultaId = Number(id);
 
   const { data: consulta, isLoading: loadingConsulta } = useQuery({
@@ -23,6 +25,12 @@ const DetalleConsulta: React.FC = () => {
     queryKey: ['distribucion-macros', consultaId],
     queryFn: () => getDistribucionMacros(consultaId),
     enabled: Boolean(consultaId),
+  });
+
+  const { data: analisis } = useQuery({
+    queryKey: ['analisis-bioquimico', consulta?.Id_Usuario],
+    queryFn: () => getAnalisisBioquimico(consulta!.Id_Usuario),
+    enabled: Boolean(consulta?.Id_Usuario),
   });
 
   if (loadingConsulta) {
@@ -138,6 +146,30 @@ const DetalleConsulta: React.FC = () => {
       </div>
 
       {/* MÉTRICAS CORPORALES */}
+      {(() => {
+        // Claves normalizadas por axios interceptor (ver client.ts normalizeKeys)
+        const c = consulta as any;
+        const peso    = c.PesoKg                 ?? c.Peso_kg;
+        const estatura= c.EstaturaCm             ?? c.Estatura_cm;
+        const imcStored = c.IMC;
+        const imc     = (imcStored && imcStored > 0)
+          ? imcStored
+          : (peso && estatura && estatura > 0)
+            ? parseFloat((peso / Math.pow(estatura / 100, 2)).toFixed(1))
+            : null;
+        const grasaG  = c.GrasaG                 ?? c.Grasa_g;
+        const grasaPct= c.Grasa_Porcentaje;
+        const musculo = c.MusculoG               ?? c.Musculo_g;
+        const masaOsea= c.Masa_OseaG             ?? c.Masa_Osea_g;
+        const visceral= c.Grasa_Visceral;
+        const agua    = c.Agua_Corporal_Pct;
+        const edadMet = c.Edad_Metabolica;
+        const cintura = c.Circunferencia_CinturaCm ?? c.Circunferencia_Cintura_cm;
+        const cadera  = c.Circunferencia_CaderaCm  ?? c.Circunferencia_Cadera_cm;
+        const muneca  = c.Circunferencia_MunecaCm  ?? c.Circunferencia_Muneca_cm;
+        const sistolica  = c.Presion_Arterial_Sistolica;
+        const diastolica = c.Presion_Arterial_Diastolica;
+        return (
       <div className="dc-card dc-card-full">
         <div className="dc-card-header dc-emerald">
           <i className="fa fa-heartbeat"></i> Métricas Corporales
@@ -148,28 +180,26 @@ const DetalleConsulta: React.FC = () => {
           <div className="dc-metrics-grid dc-metrics-main">
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-emerald"><i className="fa fa-arrows-v"></i></div>
-              <div className="dc-metric-val">{consulta.Peso_kg || '-'}</div>
+              <div className="dc-metric-val">{peso || '-'}</div>
               <div className="dc-metric-unit">kg</div>
               <div className="dc-metric-lbl">Peso</div>
             </div>
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-male"></i></div>
-              <div className="dc-metric-val">{consulta.Estatura_cm || '-'}</div>
+              <div className="dc-metric-val">{estatura || '-'}</div>
               <div className="dc-metric-unit">cm</div>
               <div className="dc-metric-lbl">Estatura</div>
             </div>
             <div className="dc-metric-box dc-metric-highlight">
               <div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-bar-chart"></i></div>
-              <div className="dc-metric-val">{consulta.IMC || '-'}</div>
+              <div className="dc-metric-val">{imc ?? '-'}</div>
               <div className="dc-metric-unit">kg/m²</div>
               <div className="dc-metric-lbl">IMC</div>
             </div>
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-danger"><i className="fa fa-heartbeat"></i></div>
               <div className="dc-metric-val">
-                {consulta.Presion_Arterial_Sistolica && consulta.Presion_Arterial_Diastolica
-                  ? `${consulta.Presion_Arterial_Sistolica}/${consulta.Presion_Arterial_Diastolica}`
-                  : '-'}
+                {sistolica && diastolica ? `${sistolica}/${diastolica}` : '-'}
               </div>
               <div className="dc-metric-unit">mmHg</div>
               <div className="dc-metric-lbl">Presión Arterial</div>
@@ -181,52 +211,52 @@ const DetalleConsulta: React.FC = () => {
           <div className="dc-metrics-grid">
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-amber"><i className="fa fa-tint"></i></div>
-              <div className="dc-metric-val">{consulta.Grasa_g || '-'}</div>
+              <div className="dc-metric-val">{grasaG || '-'}</div>
               <div className="dc-metric-unit">g</div>
               <div className="dc-metric-lbl">Grasa (g)</div>
             </div>
-            {consulta.Grasa_Porcentaje != null && (
+            {grasaPct != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-amber"><i className="fa fa-pie-chart"></i></div>
-                <div className="dc-metric-val">{consulta.Grasa_Porcentaje}</div>
+                <div className="dc-metric-val">{grasaPct}</div>
                 <div className="dc-metric-unit">%</div>
                 <div className="dc-metric-lbl">Grasa (%)</div>
               </div>
             )}
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-emerald"><i className="fa fa-male"></i></div>
-              <div className="dc-metric-val">{consulta.Musculo_g || '-'}</div>
+              <div className="dc-metric-val">{musculo || '-'}</div>
               <div className="dc-metric-unit">g</div>
               <div className="dc-metric-lbl">Músculo (g)</div>
             </div>
-            {consulta.Masa_Osea_g != null && (
+            {masaOsea != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-circle-o"></i></div>
-                <div className="dc-metric-val">{consulta.Masa_Osea_g}</div>
+                <div className="dc-metric-val">{masaOsea}</div>
                 <div className="dc-metric-unit">g</div>
                 <div className="dc-metric-lbl">Masa Ósea</div>
               </div>
             )}
-            {consulta.Grasa_Visceral != null && (
+            {visceral != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-amber"><i className="fa fa-circle"></i></div>
-                <div className="dc-metric-val">{consulta.Grasa_Visceral}</div>
+                <div className="dc-metric-val">{visceral}</div>
                 <div className="dc-metric-unit">nivel</div>
                 <div className="dc-metric-lbl">Grasa Visceral</div>
               </div>
             )}
-            {consulta.Agua_Corporal_Pct != null && (
+            {agua != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-tint"></i></div>
-                <div className="dc-metric-val">{consulta.Agua_Corporal_Pct}</div>
+                <div className="dc-metric-val">{agua}</div>
                 <div className="dc-metric-unit">%</div>
                 <div className="dc-metric-lbl">Agua Corporal</div>
               </div>
             )}
-            {consulta.Edad_Metabolica != null && (
+            {edadMet != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-clock-o"></i></div>
-                <div className="dc-metric-val">{consulta.Edad_Metabolica}</div>
+                <div className="dc-metric-val">{edadMet}</div>
                 <div className="dc-metric-unit">años</div>
                 <div className="dc-metric-lbl">Edad Metabólica</div>
               </div>
@@ -238,20 +268,20 @@ const DetalleConsulta: React.FC = () => {
           <div className="dc-metrics-grid">
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-expand"></i></div>
-              <div className="dc-metric-val">{consulta.Circunferencia_Cintura_cm || '-'}</div>
+              <div className="dc-metric-val">{cintura || '-'}</div>
               <div className="dc-metric-unit">cm</div>
               <div className="dc-metric-lbl">Cintura</div>
             </div>
             <div className="dc-metric-box">
               <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-expand"></i></div>
-              <div className="dc-metric-val">{consulta.Circunferencia_Cadera_cm || '-'}</div>
+              <div className="dc-metric-val">{cadera || '-'}</div>
               <div className="dc-metric-unit">cm</div>
               <div className="dc-metric-lbl">Cadera</div>
             </div>
-            {consulta.Circunferencia_Muneca_cm != null && (
+            {muneca != null && (
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-slate"><i className="fa fa-expand"></i></div>
-                <div className="dc-metric-val">{consulta.Circunferencia_Muneca_cm}</div>
+                <div className="dc-metric-val">{muneca}</div>
                 <div className="dc-metric-unit">cm</div>
                 <div className="dc-metric-lbl">Muñeca</div>
               </div>
@@ -331,9 +361,36 @@ const DetalleConsulta: React.FC = () => {
           )}
         </div>
       </div>
+        );
+      })()}
 
       {/* DISTRIBUCIÓN DE MACRONUTRIENTES */}
-      {distribucion && (
+      {distribucion && (() => {
+        // Claves normalizadas: CHO_g → CHOG, Prot_g → ProtG, Grasa_g → GrasaG, Fibra_g → FibraG
+        // Desayuno_CHO_g → Desayuno_CHOG  (el _C queda, solo _g → G)
+        const d = distribucion as any;
+        const getMeal = (key: string) => ({
+          cho  : d[`${key}_CHOG`]   ?? d[`${key}_CHO_g`]   ?? 0,
+          prot : d[`${key}_ProtG`]  ?? d[`${key}_Prot_g`]  ?? 0,
+          grasa: d[`${key}_GrasaG`] ?? d[`${key}_Grasa_g`] ?? 0,
+          fibra: d[`${key}_FibraG`] ?? d[`${key}_Fibra_g`] ?? 0,
+        });
+        // Si los totales no se guardaron (ej: el usuario completó paso 5 sin pasar por paso 3-4),
+        // calculamos como suma de tiempos de comida como fallback.
+        const meals = ['Desayuno', 'MeriendaAM', 'Almuerzo', 'MeriendaPM', 'Cena'].map(getMeal);
+        const sumMeal = (fn: (m: ReturnType<typeof getMeal>) => number) =>
+          meals.reduce((acc, m) => acc + fn(m), 0);
+        const chogStored  = d.CHOG   ?? d.CHO_g   ?? 0;
+        const protgStored = d.ProtG  ?? d.Prot_g  ?? 0;
+        const grasagStored = d.GrasaG ?? d.Grasa_g ?? 0;
+        const chog   = chogStored  > 0 ? chogStored  : sumMeal(m => m.cho);
+        const protg  = protgStored > 0 ? protgStored : sumMeal(m => m.prot);
+        const grasag = grasagStored > 0 ? grasagStored : sumMeal(m => m.grasa);
+        const fibrag = d.FibraG ?? d.Fibra_g ?? 0;
+        // REE: si viene 0, intentamos recalcular kcal totales desde los macros
+        const reeStored = d.REE ?? 0;
+        const ree = reeStored > 0 ? reeStored : Math.round((chog * 4) + (protg * 4) + (grasag * 9));
+        return (
         <div className="dc-card dc-card-full">
           <div className="dc-card-header dc-amber">
             <i className="fa fa-calculator"></i>
@@ -344,12 +401,12 @@ const DetalleConsulta: React.FC = () => {
             <div className="dc-calorico-header">
               <div>
                 <div className="dc-calorico-label">Fórmula utilizada</div>
-                <div className="dc-formula-badge">{distribucion.Formula_Usada || '-'}</div>
+                <div className="dc-formula-badge">{d.Formula_Usada || '-'}</div>
               </div>
               <div className="dc-ree-block">
                 <div className="dc-calorico-label">Requerimiento Energético Total (REE)</div>
                 <div className="dc-ree-value">
-                  <span>{distribucion.REE || '-'}</span>
+                  <span>{ree || '-'}</span>
                   <span className="dc-ree-unit">kcal/día</span>
                 </div>
               </div>
@@ -361,71 +418,48 @@ const DetalleConsulta: React.FC = () => {
             </div>
             <div className="dc-macro-desglose">
               <div className="dc-macro-item dc-macro-cho-item">
-                <div className="dc-macro-item-header">
-                  <i className="fa fa-leaf"></i> Carbohidratos
-                </div>
+                <div className="dc-macro-item-header"><i className="fa fa-leaf"></i> Carbohidratos</div>
                 <div className="dc-macro-item-data">
-                  <span className="dc-macro-num">{distribucion.CHO_g || 0}</span>
+                  <span className="dc-macro-num">{chog}</span>
                   <span className="dc-macro-unit2">g</span>
                 </div>
                 <div className="dc-macro-item-kcal">
-                  {((distribucion.CHO_g || 0) * 4)} kcal
-                  <span className="dc-macro-pct">
-                    ({distribucion.Formula_Usada ? '~' : ''}
-                    {distribucion.REE > 0
-                      ? Math.round(((distribucion.CHO_g || 0) * 4 / distribucion.REE) * 100)
-                      : 0}%)
-                  </span>
+                  {chog * 4} kcal
+                  <span className="dc-macro-pct">({ree > 0 ? Math.round((chog * 4 / ree) * 100) : 0}%)</span>
                 </div>
               </div>
 
               <div className="dc-macro-item dc-macro-prot-item">
-                <div className="dc-macro-item-header">
-                  <i className="fa fa-male"></i> Proteínas
-                </div>
+                <div className="dc-macro-item-header"><i className="fa fa-male"></i> Proteínas</div>
                 <div className="dc-macro-item-data">
-                  <span className="dc-macro-num">{distribucion.Prot_g || 0}</span>
+                  <span className="dc-macro-num">{protg}</span>
                   <span className="dc-macro-unit2">g</span>
                 </div>
                 <div className="dc-macro-item-kcal">
-                  {((distribucion.Prot_g || 0) * 4)} kcal
-                  <span className="dc-macro-pct">
-                    ({distribucion.REE > 0
-                      ? Math.round(((distribucion.Prot_g || 0) * 4 / distribucion.REE) * 100)
-                      : 0}%)
-                  </span>
+                  {protg * 4} kcal
+                  <span className="dc-macro-pct">({ree > 0 ? Math.round((protg * 4 / ree) * 100) : 0}%)</span>
                 </div>
               </div>
 
               <div className="dc-macro-item dc-macro-grasa-item">
-                <div className="dc-macro-item-header">
-                  <i className="fa fa-tint"></i> Grasas
-                </div>
+                <div className="dc-macro-item-header"><i className="fa fa-tint"></i> Grasas</div>
                 <div className="dc-macro-item-data">
-                  <span className="dc-macro-num">{distribucion.Grasa_g || 0}</span>
+                  <span className="dc-macro-num">{grasag}</span>
                   <span className="dc-macro-unit2">g</span>
                 </div>
                 <div className="dc-macro-item-kcal">
-                  {((distribucion.Grasa_g || 0) * 9)} kcal
-                  <span className="dc-macro-pct">
-                    ({distribucion.REE > 0
-                      ? Math.round(((distribucion.Grasa_g || 0) * 9 / distribucion.REE) * 100)
-                      : 0}%)
-                  </span>
+                  {grasag * 9} kcal
+                  <span className="dc-macro-pct">({ree > 0 ? Math.round((grasag * 9 / ree) * 100) : 0}%)</span>
                 </div>
               </div>
 
               <div className="dc-macro-item dc-macro-fibra-item">
-                <div className="dc-macro-item-header">
-                  <i className="fa fa-circle-o"></i> Fibra
-                </div>
+                <div className="dc-macro-item-header"><i className="fa fa-circle-o"></i> Fibra</div>
                 <div className="dc-macro-item-data">
-                  <span className="dc-macro-num">{distribucion.Fibra_g || 0}</span>
+                  <span className="dc-macro-num">{fibrag}</span>
                   <span className="dc-macro-unit2">g</span>
                 </div>
-                <div className="dc-macro-item-kcal dc-macro-fibra-note">
-                  Recomendada/día
-                </div>
+                <div className="dc-macro-item-kcal dc-macro-fibra-note">Recomendada/día</div>
               </div>
             </div>
 
@@ -438,35 +472,29 @@ const DetalleConsulta: React.FC = () => {
                 <thead>
                   <tr>
                     <th className="dc-meal-col-name">Tiempo de Comida</th>
-                    <th>CHO (g)</th>
-                    <th>Proteínas (g)</th>
-                    <th>Grasas (g)</th>
-                    <th>Fibra (g)</th>
-                    <th className="dc-col-kcal">kcal</th>
+                    <th>CHO (g)</th><th>Proteínas (g)</th><th>Grasas (g)</th>
+                    <th>Fibra (g)</th><th className="dc-col-kcal">kcal</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { key: 'Desayuno', label: 'Desayuno', icon: 'fa-sun-o' },
-                    { key: 'MeriendaAM', label: 'Merienda AM', icon: 'fa-coffee' },
-                    { key: 'Almuerzo', label: 'Almuerzo', icon: 'fa-cutlery' },
-                    { key: 'MeriendaPM', label: 'Merienda PM', icon: 'fa-apple' },
-                    { key: 'Cena', label: 'Cena', icon: 'fa-moon-o' },
+                    { key: 'Desayuno',   label: 'Desayuno',    icon: 'fa-sun-o'   },
+                    { key: 'MeriendaAM', label: 'Merienda AM', icon: 'fa-coffee'  },
+                    { key: 'Almuerzo',   label: 'Almuerzo',    icon: 'fa-cutlery' },
+                    { key: 'MeriendaPM', label: 'Merienda PM', icon: 'fa-apple'   },
+                    { key: 'Cena',       label: 'Cena',        icon: 'fa-moon-o'  },
                   ].map(meal => {
-                    const cho = (distribucion as any)[`${meal.key}_CHO_g`] || 0;
-                    const prot = (distribucion as any)[`${meal.key}_Prot_g`] || 0;
-                    const grasa = (distribucion as any)[`${meal.key}_Grasa_g`] || 0;
-                    const fibra = (distribucion as any)[`${meal.key}_Fibra_g`] || 0;
-                    const kcal = calcularKcal(cho, prot, grasa);
+                    const m = getMeal(meal.key);
+                    const kcal = calcularKcal(m.cho, m.prot, m.grasa);
                     return (
                       <tr key={meal.key} className="dc-meal-row">
                         <td className="dc-meal-name">
                           <i className={`fa ${meal.icon} dc-meal-icon`}></i> {meal.label}
                         </td>
-                        <td>{cho > 0 ? cho : '-'}</td>
-                        <td>{prot > 0 ? prot : '-'}</td>
-                        <td>{grasa > 0 ? grasa : '-'}</td>
-                        <td>{fibra > 0 ? fibra : '-'}</td>
+                        <td>{m.cho  > 0 ? m.cho   : '-'}</td>
+                        <td>{m.prot > 0 ? m.prot  : '-'}</td>
+                        <td>{m.grasa> 0 ? m.grasa : '-'}</td>
+                        <td>{m.fibra> 0 ? m.fibra : '-'}</td>
                         <td className="dc-kcal-cell">{kcal > 0 ? kcal : '-'}</td>
                       </tr>
                     );
@@ -475,18 +503,16 @@ const DetalleConsulta: React.FC = () => {
                 <tfoot>
                   <tr className="dc-meal-total-row">
                     <td className="dc-meal-name"><strong>Total</strong></td>
-                    <td>{distribucion.CHO_g || 0}</td>
-                    <td>{distribucion.Prot_g || 0}</td>
-                    <td>{distribucion.Grasa_g || 0}</td>
-                    <td>{distribucion.Fibra_g || 0}</td>
-                    <td className="dc-kcal-cell">{calcularKcal(distribucion.CHO_g || 0, distribucion.Prot_g || 0, distribucion.Grasa_g || 0)}</td>
+                    <td>{chog}</td><td>{protg}</td><td>{grasag}</td><td>{fibrag}</td>
+                    <td className="dc-kcal-cell">{calcularKcal(chog, protg, grasag)}</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* NOTAS CLÍNICAS */}
       <div className="dc-row-2">
@@ -513,14 +539,38 @@ const DetalleConsulta: React.FC = () => {
         </div>
       </div>
 
-      {/* PRÓXIMA CITA */}
-      {consulta.Proxima_Cita && (
-        <div className="dc-card dc-card-full dc-proxima-cita">
-          <div className="dc-card-header dc-emerald">
-            <i className="fa fa-calendar-check-o"></i> Próxima Cita
+      {/* ANÁLISIS BIOQUÍMICO */}
+      {analisis && (
+        <div className="dc-card dc-card-full">
+          <div className="dc-card-header dc-indigo">
+            <i className="fa fa-flask"></i> Exámenes de Laboratorio
+            {analisis.Fecha_Analisis && (
+              <span className="dc-badge-fecha"> — {analisis.Fecha_Analisis}</span>
+            )}
           </div>
-          <div className="dc-card-body" style={{ padding: '1.25rem 1.5rem' }}>
-            <div className="dc-proxima-fecha">{formatFecha(consulta.Proxima_Cita)}</div>
+          <div className="dc-card-body">
+            <div className="dc-metrics-grid">
+              {analisis.Hemoglobina    != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-danger"><i className="fa fa-tint"></i></div><div className="dc-metric-val">{analisis.Hemoglobina}</div><div className="dc-metric-unit">g/dl</div><div className="dc-metric-lbl">Hemoglobina</div></div>}
+              {analisis.Hematocrito    != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-danger"><i className="fa fa-tint"></i></div><div className="dc-metric-val">{analisis.Hematocrito}</div><div className="dc-metric-unit">%</div><div className="dc-metric-lbl">Hematocrito</div></div>}
+              {analisis.Colesterol_Total != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-amber"><i className="fa fa-heartbeat"></i></div><div className="dc-metric-val">{analisis.Colesterol_Total}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">Colesterol Total</div></div>}
+              {analisis.HDL            != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-emerald"><i className="fa fa-heart"></i></div><div className="dc-metric-val">{analisis.HDL}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">HDL</div></div>}
+              {analisis.LDL            != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-amber"><i className="fa fa-heart"></i></div><div className="dc-metric-val">{analisis.LDL}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">LDL</div></div>}
+              {analisis.Trigliceridos  != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-amber"><i className="fa fa-tint"></i></div><div className="dc-metric-val">{analisis.Trigliceridos}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">Triglicéridos</div></div>}
+              {analisis.Glicemia       != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.Glicemia}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">Glicemia</div></div>}
+              {analisis.Acido_Urico    != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-slate"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.Acido_Urico}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">Ácido Úrico</div></div>}
+              {analisis.Albumina       != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-slate"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.Albumina}</div><div className="dc-metric-unit">g/dl</div><div className="dc-metric-lbl">Albúmina</div></div>}
+              {analisis.Creatinina     != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-slate"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.Creatinina}</div><div className="dc-metric-unit">mg/dl</div><div className="dc-metric-lbl">Creatinina</div></div>}
+              {analisis.TSH            != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.TSH}</div><div className="dc-metric-unit">μUI/ml</div><div className="dc-metric-lbl">TSH</div></div>}
+              {analisis.T4             != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.T4}</div><div className="dc-metric-unit">ng/dl</div><div className="dc-metric-lbl">T4</div></div>}
+              {analisis.T3             != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.T3}</div><div className="dc-metric-unit">ng/dl</div><div className="dc-metric-lbl">T3</div></div>}
+              {analisis.Vitamina_D     != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-amber"><i className="fa fa-sun-o"></i></div><div className="dc-metric-val">{analisis.Vitamina_D}</div><div className="dc-metric-unit">ng/ml</div><div className="dc-metric-lbl">Vitamina D</div></div>}
+              {analisis.Vitamina_B12   != null && <div className="dc-metric-box"><div className="dc-metric-icon dc-icon-emerald"><i className="fa fa-flask"></i></div><div className="dc-metric-val">{analisis.Vitamina_B12}</div><div className="dc-metric-unit">pg/ml</div><div className="dc-metric-lbl">Vitamina B12</div></div>}
+            </div>
+            {analisis.Observaciones && (
+              <div className="dc-text-block" style={{ marginTop: '1rem' }}>
+                <strong>Observaciones:</strong> {analisis.Observaciones}
+              </div>
+            )}
           </div>
         </div>
       )}

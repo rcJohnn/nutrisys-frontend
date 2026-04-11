@@ -73,6 +73,7 @@
 .dc-badge-danger { background: #f8d7da; color: #721c24; }
 .dc-badge-warning { background: #fff3cd; color: #856404; }
 .dc-badge-pending { background: #cce5ff; color: #004085; }
+.dc-badge-fecha { font-size: 0.8rem; font-weight: 400; opacity: 0.85; }
 
 /* ── Loading ── */
 .dc-loading-wrap {

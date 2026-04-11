@@ -352,6 +352,37 @@
   border-color: #047857;
   transform: translateY(-1px);
 }
+.cm-btn-success {
+  background: #16a34a;
+  color: #fff;
+  border: 1px solid #16a34a;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.25rem;
+}
+.cm-btn-success:hover:not(:disabled) {
+  background: #15803d;
+  border-color: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+}
+
+/* ── Finalizar Consulta ── */
+.cm-calc-step--finalizar {
+  border-top: 2px dashed var(--ev-primary);
+  margin-top: 8px;
+  padding-top: 16px;
+}
+.cm-finalizar-desc {
+  font-size: 0.85rem;
+  color: var(--ns-slate-500);
+  margin: 0 0 14px;
+}
+.cm-finalizar-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
 
 .cm-btn-sm {
   display: inline-flex;

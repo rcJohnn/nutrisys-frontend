@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getConsultaById } from '../api/consultas';
+import { getConsultaById, finalizarConsulta, getClinicasMedico } from '../api/consultas';
+import logoSistema from '../assets/images/Untitled.png';
 import { getUsuarioById } from '../api/usuarios';
 import {
   getPadecimientosDisponibles, getPadecimientosUsuario,
@@ -158,6 +159,8 @@ const generarPDFNutricional = (datos: {
   distribucion: { tiempos: string[]; cho: number[]; prot: number[]; grasa: number[]; fibra: number[] };
   historia?: HistoriaClinicaData | null;
   analisis?: AnalisisBioquimicoData | null;
+  logoSistema?: string;
+  logoClinica?: string;
 }) => {
   const filasDist = datos.distribucion.tiempos.map((t, i) =>
     `<tr>
@@ -199,9 +202,11 @@ const generarPDFNutricional = (datos: {
   <title>Plan Nutricional - ${datos.paciente}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
-    .header { background: linear-gradient(135deg, #006c49, #10b981); color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .header h1 { margin: 0; font-size: 22px; }
-    .header p { margin: 4px 0 0; opacity: .85; font-size: 14px; }
+    .header { background: linear-gradient(135deg, #006c49, #10b981); color: #fff; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .header-logos { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .header-logos img { height: 52px; width: auto; object-fit: contain; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 4px; }
+    .header-text h1 { margin: 0; font-size: 22px; }
+    .header-text p { margin: 4px 0 0; opacity: .85; font-size: 14px; }
     .card { background: #f2f3ff; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
     .card h3 { color: #006c49; margin: 0 0 8px; font-size: 15px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -215,8 +220,14 @@ const generarPDFNutricional = (datos: {
     @media print { body { padding: 0; } }
   </style></head><body>
   <div class="header">
-    <h1>Plan Nutricional</h1>
-    <p>Paciente: ${datos.paciente} &nbsp;|&nbsp; Nutricionista: ${datos.medico} &nbsp;|&nbsp; Fecha: ${datos.fecha}</p>
+    <div class="header-logos">
+      ${datos.logoSistema ? `<img src="${datos.logoSistema}" alt="NutriSys" />` : ''}
+      ${datos.logoClinica ? `<img src="${datos.logoClinica}" alt="Clínica" />` : ''}
+    </div>
+    <div class="header-text">
+      <h1>Plan Nutricional</h1>
+      <p>Paciente: ${datos.paciente} &nbsp;|&nbsp; Nutricionista: ${datos.medico} &nbsp;|&nbsp; Fecha: ${datos.fecha}</p>
+    </div>
   </div>
   <div class="card">
     <h3>Métricas Corporales</h3>
@@ -349,7 +360,7 @@ const CompletarMetricas: React.FC = () => {
   const consultaId = Number(id);
 
   // ── Carga inicial ────────────────────────────────────────────────────────
-  const { data: consulta, isLoading, refetch } = useQuery({
+  const { data: consulta, isLoading } = useQuery({
     queryKey: ['consulta', consultaId],
     queryFn: () => getConsultaById(consultaId),
     enabled: Boolean(consultaId),
@@ -402,29 +413,34 @@ const CompletarMetricas: React.FC = () => {
   const [imcClasif, setImcClasif] = useState<{ texto: string; clase: string } | null>(null);
 
   // ── Populate form desde consulta cargada ─────────────────────────────────
+  // NOTA: el interceptor de axios (normalizeKeys) convierte claves del response:
+  //   _minúscula → Mayúscula  (Peso_kg → PesoKg, Grasa_g → GrasaG, Estatura_cm → EstaturaCm)
+  //   _Mayúscula → sin cambio (Presion_Arterial_Sistolica, Observaciones_Medico quedan igual)
+  // Por eso usamos fallback (normalizada ?? original) para cubrir ambos casos.
   useEffect(() => {
     if (activeTab !== 'metricas') return;
     if (!consulta) return;
-    
+
+    const c = consulta as any;
     const newMetricas = {
-      peso: consulta.Peso_kg ? String(consulta.Peso_kg) : '',
-      estatura: consulta.Estatura_cm ? String(consulta.Estatura_cm) : '',
-      grasaG: consulta.Grasa_g ? String(consulta.Grasa_g) : '',
-      grasaPct: consulta.Grasa_Porcentaje ? String(consulta.Grasa_Porcentaje) : '',
-      musculoG: consulta.Musculo_g ? String(consulta.Musculo_g) : '',
-      masaOsea: consulta.Masa_Osea_g ? String(consulta.Masa_Osea_g) : '',
-      aguaCorporal: consulta.Agua_Corporal_Pct ? String(consulta.Agua_Corporal_Pct) : '',
-      edadMetabolica: consulta.Edad_Metabolica ? String(consulta.Edad_Metabolica) : '',
-      grasaVisceral: consulta.Grasa_Visceral ? String(consulta.Grasa_Visceral) : '',
-      cintura: consulta.Circunferencia_Cintura_cm ? String(consulta.Circunferencia_Cintura_cm) : '',
-      cadera: consulta.Circunferencia_Cadera_cm ? String(consulta.Circunferencia_Cadera_cm) : '',
-      muneca: consulta.Circunferencia_Muneca_cm ? String(consulta.Circunferencia_Muneca_cm) : '',
-      sistolica: consulta.Presion_Arterial_Sistolica ? String(consulta.Presion_Arterial_Sistolica) : '',
-      diastolica: consulta.Presion_Arterial_Diastolica ? String(consulta.Presion_Arterial_Diastolica) : '',
-      observaciones: consulta.Observaciones_Medico ?? '',
-      recomendaciones: consulta.Recomendaciones ?? '',
+      peso:           (c.PesoKg                    ?? c.Peso_kg)                    ? String(c.PesoKg                    ?? c.Peso_kg)                    : '',
+      estatura:       (c.EstaturaCm                ?? c.Estatura_cm)                ? String(c.EstaturaCm                ?? c.Estatura_cm)                : '',
+      grasaG:         (c.GrasaG                    ?? c.Grasa_g)                    ? String(c.GrasaG                    ?? c.Grasa_g)                    : '',
+      grasaPct:       (c.Grasa_Porcentaje)                                          ? String(c.Grasa_Porcentaje)                                          : '',
+      musculoG:       (c.MusculoG                  ?? c.Musculo_g)                  ? String(c.MusculoG                  ?? c.Musculo_g)                  : '',
+      masaOsea:       (c.Masa_OseaG                ?? c.Masa_Osea_g)                ? String(c.Masa_OseaG                ?? c.Masa_Osea_g)                : '',
+      aguaCorporal:   (c.Agua_Corporal_Pct)                                         ? String(c.Agua_Corporal_Pct)                                         : '',
+      edadMetabolica: (c.Edad_Metabolica)                                           ? String(c.Edad_Metabolica)                                           : '',
+      grasaVisceral:  (c.Grasa_Visceral)                                            ? String(c.Grasa_Visceral)                                            : '',
+      cintura:        (c.Circunferencia_CinturaCm  ?? c.Circunferencia_Cintura_cm)  ? String(c.Circunferencia_CinturaCm  ?? c.Circunferencia_Cintura_cm)  : '',
+      cadera:         (c.Circunferencia_CaderaCm   ?? c.Circunferencia_Cadera_cm)   ? String(c.Circunferencia_CaderaCm   ?? c.Circunferencia_Cadera_cm)   : '',
+      muneca:         (c.Circunferencia_MunecaCm   ?? c.Circunferencia_Muneca_cm)   ? String(c.Circunferencia_MunecaCm   ?? c.Circunferencia_Muneca_cm)   : '',
+      sistolica:      (c.Presion_Arterial_Sistolica)                                ? String(c.Presion_Arterial_Sistolica)                                : '',
+      diastolica:     (c.Presion_Arterial_Diastolica)                               ? String(c.Presion_Arterial_Diastolica)                               : '',
+      observaciones:   c.Observaciones_Medico ?? '',
+      recomendaciones: c.Recomendaciones ?? '',
     };
-    
+
     setMetricas(newMetricas);
   }, [consulta, activeTab]);
 
@@ -828,11 +844,19 @@ const CompletarMetricas: React.FC = () => {
     },
     onSuccess: async () => {
       alert('Distribución guardada correctamente');
-      // Obtener historia y análisis para el PDF
-      const historiaData = consulta?.Id_Usuario
-        ? await getHistoriaClinica(consulta.Id_Usuario) : null;
-      const analisisData = consulta?.Id_Usuario
-        ? await getAnalisisBioquimico(consulta.Id_Usuario) : null;
+      // Obtener historia, análisis y logo de clínica para el PDF
+      const [historiaData, analisisData] = await Promise.all([
+        consulta?.Id_Usuario ? getHistoriaClinica(consulta.Id_Usuario) : Promise.resolve(null),
+        consulta?.Id_Usuario ? getAnalisisBioquimico(consulta.Id_Usuario) : Promise.resolve(null),
+      ]);
+      let logoClinicaUrl: string | undefined;
+      if (consulta?.Id_Medico && consulta?.Id_Clinica) {
+        try {
+          const clinicas = await getClinicasMedico(consulta.Id_Medico);
+          const clinica = clinicas.find(c => c.id === consulta.Id_Clinica);
+          if (clinica?.logo) logoClinicaUrl = clinica.logo;
+        } catch { /* logo de clínica es opcional */ }
+      }
       generarPDFNutricional({
         paciente: consulta?.NombreUsuario ?? '',
         medico: consulta?.NombreMedico ?? '',
@@ -855,9 +879,23 @@ const CompletarMetricas: React.FC = () => {
         },
         historia: historiaData,
         analisis: analisisData,
+        logoSistema,
+        logoClinica: logoClinicaUrl,
       });
     },
     onError: (err: Error) => alert(err.message || 'Error al guardar distribución'),
+  });
+
+  const mutFinalizarConsulta = useMutation({
+    mutationFn: () => finalizarConsulta(consultaId, {
+      Observaciones_Medico: metricas.observaciones,
+      Recomendaciones: metricas.recomendaciones,
+    }),
+    onSuccess: () => {
+      alert('¡Consulta finalizada correctamente!');
+      navigate(-1);
+    },
+    onError: (err: Error) => alert(err.message || 'Error al finalizar la consulta'),
   });
 
   // ── Loading ───────────────────────────────────────────────────────────────
@@ -1949,6 +1987,34 @@ const CompletarMetricas: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* ── Finalizar Consulta ─────────────────────────────────────── */}
+            <div className="cm-calc-step cm-calc-step--finalizar">
+              <h5 className="cm-calc-step-title">
+                <i className="fa fa-check-circle" /> ¿Listo para finalizar la consulta?
+              </h5>
+              <p className="cm-finalizar-desc">
+                Al completar la consulta se marcará como <strong>Finalizada</strong> y solo podrá visualizarse en modo lectura.
+              </p>
+              <div className="cm-finalizar-actions">
+                <button
+                  className="cm-btn cm-btn-secondary"
+                  onClick={() => navigate(-1)}>
+                  <i className="fa fa-arrow-left" /> Regresar sin Completar
+                </button>
+                <button
+                  className="cm-btn cm-btn-success"
+                  onClick={() => {
+                    if (window.confirm('¿Marcar esta consulta como finalizada? Esta acción no se puede deshacer.')) {
+                      mutFinalizarConsulta.mutate();
+                    }
+                  }}
+                  disabled={mutFinalizarConsulta.isPending}>
+                  <i className="fa fa-check-circle" />
+                  &nbsp; {mutFinalizarConsulta.isPending ? 'Finalizando...' : 'Completar Consulta y Marcar como Finalizada'}
+                </button>
+              </div>
             </div>
           </div>
         )}

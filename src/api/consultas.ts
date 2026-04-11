@@ -160,6 +160,17 @@ export const cancelarConsulta = async (id: number) => {
   return response.data;
 };
 
+export interface FinalizarConsultaData {
+  Observaciones_Medico: string;
+  Recomendaciones: string;
+  Proxima_Cita?: string;
+}
+
+export const finalizarConsulta = async (id: number, data: FinalizarConsultaData) => {
+  const response = await apiClient.post(`/Consultas/${id}/completar`, data);
+  return response.data;
+};
+
 export const marcarNoAsistio = async (id: number) => {
   const response = await apiClient.post(`/Consultas/${id}/noasistio`);
   return response.data;

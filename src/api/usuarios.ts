@@ -20,14 +20,27 @@ export interface UsuarioFiltros {
   estado?: string;
 }
 
+/** El API a veces devuelve el arreglo envuelto (p. ej. objeto con clave de lista). */
+function unwrapUsuariosPayload(data: unknown): Usuario[] {
+  if (Array.isArray(data)) return data as Usuario[];
+  if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    for (const key of ['Data', 'Items', 'items', 'Result', 'result', 'Usuarios']) {
+      const v = o[key];
+      if (Array.isArray(v)) return v as Usuario[];
+    }
+  }
+  return [];
+}
+
 export const getUsuarios = async (filtros: UsuarioFiltros = {}) => {
   const params = new URLSearchParams();
   if (filtros.correo) params.append('correo', filtros.correo);
   if (filtros.nombre) params.append('nombre', filtros.nombre);
   if (filtros.estado) params.append('estado', filtros.estado);
-  
+
   const response = await apiClient.get(`/Usuarios?${params.toString()}`);
-  return response.data;
+  return unwrapUsuariosPayload(response.data);
 };
 
 export const getUsuarioById = async (id: number) => {
