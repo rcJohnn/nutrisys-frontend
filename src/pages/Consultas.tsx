@@ -8,6 +8,7 @@ import {
 import { getUsuarios } from '../api/usuarios';
 import { getMedicos } from '../api/medicos';
 import { Pagination } from '../components/Pagination';
+import { useAlerta } from '../components/Alerta/AlertaContext';
 import './Consultas.css';
 
 const PAGE_SIZE = 10;
@@ -218,6 +219,7 @@ const ConsultaPopup: React.FC<PopupProps> = ({
 const Consultas: React.FC = () => {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
+  const alerta      = useAlerta();
   const userType    = localStorage.getItem('userType') || 'A';
   const userId      = Number(localStorage.getItem('userId') || '0');
   const userName    = localStorage.getItem('userName') || '';
@@ -262,9 +264,9 @@ const Consultas: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consultas'] });
       setPopup(null);
-      alert('Cita cancelada correctamente.');
+      alerta.success('Cita cancelada', 'La cita fue cancelada correctamente.');
     },
-    onError: () => alert('Error al cancelar la cita.'),
+    onError: () => alerta.error('Error', 'No se pudo cancelar la cita.'),
   });
 
   const noAsistioMut = useMutation({
@@ -272,9 +274,9 @@ const Consultas: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consultas'] });
       setPopup(null);
-      alert('Cita marcada como No Asistió.');
+      alerta.success('Registrado', 'La cita fue marcada como No Asistió.');
     },
-    onError: () => alert('Error al marcar la cita.'),
+    onError: () => alerta.error('Error', 'No se pudo marcar la cita.'),
   });
 
   // ── Handlers ──
@@ -313,14 +315,22 @@ const Consultas: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCancelar = (id: number) => {
-    if (window.confirm('¿Está seguro de cancelar esta cita?'))
-      cancelarMut.mutate(id);
+  const handleCancelar = async (id: number) => {
+    const ok = await alerta.confirm(
+      '¿Cancelar esta cita?',
+      'Esta acción no se puede deshacer.',
+      { textoConfirmar: 'Sí, cancelar', textoCancelar: 'No' },
+    );
+    if (ok) cancelarMut.mutate(id);
   };
 
-  const handleNoAsistio = (id: number) => {
-    if (window.confirm('¿Marcar esta cita como No Asistió?'))
-      noAsistioMut.mutate(id);
+  const handleNoAsistio = async (id: number) => {
+    const ok = await alerta.confirm(
+      '¿Marcar como No Asistió?',
+      'Se registrará que el paciente no se presentó a la cita.',
+      { textoConfirmar: 'Confirmar', textoCancelar: 'Cancelar' },
+    );
+    if (ok) noAsistioMut.mutate(id);
   };
 
   // ── Render ──

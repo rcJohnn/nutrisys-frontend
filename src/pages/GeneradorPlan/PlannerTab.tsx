@@ -23,6 +23,7 @@ import {
   previewOptimizar,
   type PlanItemEdit,
   type MacrosMeta,
+  type SugerenciaAlimento,
 } from './planLogic';
 import { GP_MACROGRUPOS, TIEMPOS_COMIDA } from './constants';
 
@@ -78,10 +79,11 @@ interface PlannerTabProps {
   idUsuario: number;
   catalogo: AlimentoNutricional[];
   onPlanConfirmado: (p: { tiempo: TiempoComidaKey; items: PlanItemEdit[]; totales: ReturnType<typeof computeTotales>; metas: MacrosMeta }) => void;
+  onPlanesParaIA: (planes: PlanAcumulado[]) => void;
   toast: (msg: string) => void;
 }
 
-const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConfirmado, toast }) => {
+const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConfirmado, onPlanesParaIA, toast }) => {
   const [pantryOn, setPantryOn] = useState(false);
   const [despensaIds, setDespensaIds] = useState<Set<number>>(new Set());
   const [despensaAlimentos, setDespensaAlimentos] = useState<AlimentoNutricional[]>([]);
@@ -98,6 +100,7 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
   const [metasAct, setMetasAct] = useState<MacrosMeta>({ carb: 0, prot: 0, grasa: 0, fibra: 0 });
   const [estadoItem, setEstadoItem] = useState<Record<string, 'confirmed' | 'to-change' | null>>({});
   const [panelCambio, setPanelCambio] = useState<Record<string, string | null>>({});
+  const [loadingCambio, setLoadingCambio] = useState<Record<string, boolean>>({});
 
   const [acumulados, setAcumulados] = useState<PlanAcumulado[]>([]);
   const [mealDone, setMealDone] = useState<Record<string, boolean>>({});
@@ -105,9 +108,12 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
   const [showOptimize, setShowOptimize] = useState(false);
   const [optPreview, setOptPreview] = useState<ReturnType<typeof previewOptimizar> | null>(null);
   const [nextMealOpen, setNextMealOpen] = useState(false);
+  const [showIAPrompt, setShowIAPrompt] = useState(false);
+  const [planesEnviados, setPlanesEnviados] = useState<PlanAcumulado[]>([]);
 
   const [addOpen, setAddOpen] = useState(false);
   const [addSearch, setAddSearch] = useState('');
+  const [addCategoryFilter, setAddCategoryFilter] = useState('');
   const [addSel, setAddSel] = useState<{ al: AlimentoNutricional; porcion: number } | null>(null);
 
   const catalogoById = useMemo(() => {
@@ -115,6 +121,20 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
     for (const a of catalogo) m.set(a.Id_Alimento, a);
     return m;
   }, [catalogo]);
+
+  const catalogoAddAgrupado = useMemo(() => {
+    const filtrado = catalogo
+      .filter((x) => !items.some((i) => i.id_bd === x.Id_Alimento))
+      .filter((x) => !addCategoryFilter || (x.Macrogrupo || x.Categoria) === addCategoryFilter)
+      .filter((x) => !addSearch.trim() || x.Nombre.toLowerCase().includes(addSearch.trim().toLowerCase()));
+    const grupos: Record<string, AlimentoNutricional[]> = {};
+    for (const a of filtrado) {
+      const key = a.Macrogrupo || a.Categoria || 'Sin clasificar';
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(a);
+    }
+    return grupos;
+  }, [catalogo, items, addCategoryFilter, addSearch]);
 
   const loadDespensaPanel = useCallback(async () => {
     setDespensaLoading(true);
@@ -299,8 +319,8 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
     toast('🗑️ Alimento eliminado');
   };
 
-  const ejecutarCambio = async (key: string) => {
-    const cat = panelCambio[key];
+  const ejecutarCambio = async (key: string, catOverride?: string) => {
+    const cat = catOverride ?? panelCambio[key];
     if (!cat || !selectedMeal) {
       toast('⚠️ Elegí un macrogrupo');
       return;
@@ -326,6 +346,7 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
       }
     }
 
+    setLoadingCambio((p) => ({ ...p, [key]: true }));
     try {
       const nuevo = await cambiarAlimentoPlan({
         IdUsuario: idUsuario,
@@ -359,6 +380,12 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
       toast('✅ Cambiado por: ' + nuevo.Nombre);
     } catch {
       toast('⚠️ No hay más alimentos de esa categoría o el endpoint cambiar-alimento no está disponible');
+    } finally {
+      setLoadingCambio((p) => {
+        const n = { ...p };
+        delete n[key];
+        return n;
+      });
     }
   };
 
@@ -422,6 +449,8 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
       const { ok, parts } = parseSpliterResponse(raw);
       toast(ok ? '✅ ' + (parts[1] || 'Enviado') : '⚠️ ' + (parts[1] || raw));
       if (ok) {
+        setPlanesEnviados([...planes]);
+        setShowIAPrompt(true);
         setAcumulados([]);
         setMealDone({});
       }
@@ -675,22 +704,25 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
                     </div>
                     {st === 'to-change' && (
                       <div className="gp-change-panel open">
-                        <div className="gp-change-panel-title">Elegí el macrogrupo para reemplazar {a.nombre}</div>
-                        <div className="gp-cat-chips">
-                          {GP_MACRO_KEYS.filter((c) => !(esVegano && (c === 'Proteínas animales' || c === 'Lácteos y derivados'))).map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              className={`gp-cat-chip${panelCambio[a.key] === c ? ' active' : ''}`}
-                              onClick={() => setPanelCambio((p) => ({ ...p, [a.key]: c }))}
-                            >
-                              {(GP_MACROGRUPOS[c] || GP_MACROGRUPOS['Sin clasificar']).emoji} {c}
-                            </button>
-                          ))}
+                        <div className="gp-change-panel-title">
+                          {loadingCambio[a.key]
+                            ? '⏳ Buscando alimento…'
+                            : `Elegí la categoría — se reemplaza ${a.nombre} por un alimento aleatorio de esa categoría`}
                         </div>
-                        <button type="button" className="gp-btn gp-btn-orange gp-btn-sm" onClick={() => ejecutarCambio(a.key)}>
-                          ⚡ Cambiar alimento
-                        </button>
+                        {!loadingCambio[a.key] && (
+                          <div className="gp-cat-chips">
+                            {GP_MACRO_KEYS.filter((c) => !(esVegano && (c === 'Proteínas animales' || c === 'Lácteos y derivados'))).map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                className="gp-cat-chip"
+                                onClick={() => ejecutarCambio(a.key, c)}
+                              >
+                                {(GP_MACROGRUPOS[c] || GP_MACROGRUPOS['Sin clasificar']).emoji} {c}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -730,23 +762,41 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
               <div className="gp-panel-agregar">
                 <div className="gp-panel-agregar-h">
                   <span>➕ Agregar alimento al plan</span>
-                  <button type="button" className="gp-btn-close" onClick={() => { setAddOpen(false); setAddSel(null); setAddSearch(''); }}>
+                  <button type="button" className="gp-btn-close" onClick={() => { setAddOpen(false); setAddSel(null); setAddSearch(''); setAddCategoryFilter(''); }}>
                     ✕
                   </button>
                 </div>
                 {!addSel ? (
                   <>
                     <input className="gp-input" placeholder="Buscar…" value={addSearch} onChange={(e) => setAddSearch(e.target.value)} />
-                    <div className="gp-add-list">
-                      {catalogo
-                        .filter((x) => !items.some((i) => i.id_bd === x.Id_Alimento))
-                        .filter((x) => !addSearch.trim() || x.Nombre.toLowerCase().includes(addSearch.trim().toLowerCase()))
-                        .slice(0, 80)
-                        .map((x) => (
-                          <button key={x.Id_Alimento} type="button" className="gp-add-row" onClick={() => setAddSel({ al: x, porcion: 25 })}>
-                            {x.Nombre} <span>+</span>
-                          </button>
-                        ))}
+                    {addCategoryFilter && (
+                      <div className="gp-add-cat-badge">
+                        Categoría: <strong>{addCategoryFilter}</strong>
+                        <button type="button" onClick={() => setAddCategoryFilter('')}>✕</button>
+                      </div>
+                    )}
+                    <div className="gp-add-grupos">
+                      {Object.entries(catalogoAddAgrupado).map(([cat, foods]) => {
+                        const info = GP_MACROGRUPOS[cat] || GP_MACROGRUPOS['Sin clasificar'];
+                        const abierto = !!addSearch.trim() || !!addCategoryFilter;
+                        return (
+                          <details key={cat} className="gp-add-grupo" open={abierto}>
+                            <summary className="gp-add-grupo-header">
+                              <span className="gp-add-grupo-icon" style={{ background: info.color }}>{info.emoji}</span>
+                              <span className="gp-add-grupo-name">{cat}</span>
+                              <span className="gp-add-grupo-count">{foods.length}</span>
+                              <span className="gp-add-grupo-chevron">▾</span>
+                            </summary>
+                            <div className="gp-add-list">
+                              {foods.map((x) => (
+                                <button key={x.Id_Alimento} type="button" className="gp-add-row" onClick={() => setAddSel({ al: x, porcion: 25 })}>
+                                  {x.Nombre} <span>+</span>
+                                </button>
+                              ))}
+                            </div>
+                          </details>
+                        );
+                      })}
                     </div>
                   </>
                 ) : (
@@ -843,6 +893,27 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
             {optPreview.advertencias.length > 0 && (
               <div className="gp-opt-warn">{optPreview.advertencias.join(' ')}</div>
             )}
+            {optPreview.sugerencias.length > 0 && (
+              <div className="gp-opt-sugerencias">
+                <p className="gp-opt-sug-title">💡 Para mejorar la cobertura, considerá agregar:</p>
+                {optPreview.sugerencias.map((s: SugerenciaAlimento) => (
+                  <button
+                    key={s.macro}
+                    type="button"
+                    className="gp-opt-sug-btn"
+                    onClick={() => {
+                      setShowOptimize(false);
+                      setAddCategoryFilter(s.categoria);
+                      setAddOpen(true);
+                      setAddSearch('');
+                      setAddSel(null);
+                    }}
+                  >
+                    {s.emoji} Agregar {s.categoria} (~{s.cantidadG}g para +{s.deficit}g de {s.macroLabel})
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="gp-modal-actions">
               <button type="button" className="gp-btn gp-btn-outline" onClick={() => setShowOptimize(false)}>
                 Cancelar
@@ -875,6 +946,38 @@ const PlannerTab: React.FC<PlannerTabProps> = ({ idUsuario, catalogo, onPlanConf
             <button type="button" className="gp-btn gp-btn-outline gp-btn-block" style={{ marginTop: 12 }} onClick={() => setNextMealOpen(false)}>
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {showIAPrompt && planesEnviados.length > 0 && (
+        <div className="gp-modal-back" onClick={() => setShowIAPrompt(false)}>
+          <div className="gp-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>🤖</div>
+            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>¿Generamos recetas con IA?</h3>
+            <p style={{ color: '#64748b', fontSize: 14, textAlign: 'center', marginBottom: 20 }}>
+              Podés generar ideas de recetas personalizadas para cada uno de los{' '}
+              <strong>{planesEnviados.length}</strong> tiempo{planesEnviados.length !== 1 ? 's' : ''} de comida enviados.
+            </p>
+            <div className="gp-modal-actions">
+              <button
+                type="button"
+                className="gp-btn gp-btn-outline"
+                onClick={() => setShowIAPrompt(false)}
+              >
+                No por ahora
+              </button>
+              <button
+                type="button"
+                className="gp-btn gp-btn-primary"
+                onClick={() => {
+                  setShowIAPrompt(false);
+                  onPlanesParaIA(planesEnviados);
+                }}
+              >
+                ✨ Sí, generar recetas
+              </button>
+            </div>
           </div>
         </div>
       )}

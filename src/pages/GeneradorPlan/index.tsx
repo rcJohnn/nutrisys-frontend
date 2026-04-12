@@ -27,7 +27,7 @@ const GeneradorPlan: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [planIA, setPlanIA] = useState<PlanIAContext | null>(null);
+  const [planesIA, setPlanesIA] = useState<PlanIAContext[]>([]);
 
   const [toastMsg, setToastMsg] = useState('');
   const toastT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,9 +90,14 @@ const GeneradorPlan: React.FC = () => {
   });
 
   const onPlanConfirmadoIA = (p: PlanIAContext) => {
-    setPlanIA(p);
+    setPlanesIA([p]);
     setTab('recetas');
     toast('✅ Plan listo para IA');
+  };
+
+  const onPlanesParaIA = (planes: PlanIAContext[]) => {
+    setPlanesIA(planes);
+    setTab('recetas');
   };
 
   const showSearch = userType !== 'U';
@@ -201,9 +206,9 @@ const GeneradorPlan: React.FC = () => {
           </div>
 
           {tab === 'planner' && (
-            <PlannerTab idUsuario={idUsuario} catalogo={catalogo} onPlanConfirmado={onPlanConfirmadoIA} toast={toast} />
+            <PlannerTab idUsuario={idUsuario} catalogo={catalogo} onPlanConfirmado={onPlanConfirmadoIA} onPlanesParaIA={onPlanesParaIA} toast={toast} />
           )}
-          {tab === 'recetas' && <IATab idUsuario={idUsuario} plan={planIA} toast={toast} />}
+          {tab === 'recetas' && <IATab idUsuario={idUsuario} planes={planesIA} toast={toast} />}
           {tab === 'lista' && <ListaTab alimentos={catalogo} loading={catLoading} />}
         </>
       )}

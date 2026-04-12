@@ -35,19 +35,21 @@ export function planItemKey(id: number, index: number) {
 }
 
 export function fromApiAlimento(a: PlanAlimentoItem, index: number): PlanItemEdit {
+  // normalizeKeys convierte _([a-z]) → Mayúscula: porcion_g → PorcionG, carbohidratos_g → CarbohidratosG, etc.
+  const r = a as any;
   return {
     key: planItemKey(a.Id_Alimento, index),
     id_bd: a.Id_Alimento,
     nombre: a.Nombre,
     categoria: a.Categoria,
-    macrogrupo: (a as any).Macrogrupo || a.Categoria || '',
-    porcion_g: a.Porcion_g,
+    macrogrupo: a.Macrogrupo || a.Categoria || '',
+    porcion_g: r.PorcionG ?? r.Porcion_g ?? 0,
     factor_coccion: a.Factor_Coccion ?? 1,
-    carb: a.Carbohidratos_g,
-    prot: a.Proteina_g,
-    grasa: a.Grasa_g,
-    fibra: a.Fibra_g,
-    energia: a.Energia_kcal,
+    carb: r.CarbohidratosG ?? r.Carbohidratos_g ?? 0,
+    prot: r.ProteinaG ?? r.Proteina_g ?? 0,
+    grasa: r.GrasaG ?? r.Grasa_g ?? 0,
+    fibra: r.FibraG ?? r.Fibra_g ?? 0,
+    energia: r.EnergiaKcal ?? r.Energia_kcal ?? 0,
   };
 }
 
@@ -99,11 +101,12 @@ export function applyPorcionDisplay(
   let fc: number;
 
   if (base) {
-    carbBase = base.Carbohidratos_g;
-    protBase = base.Proteina_g;
-    grasaBase = base.Grasa_g;
-    fibraBase = base.Fibra_g;
-    enerBase = base.Energia_kcal;
+    const rb = base as any;
+    carbBase  = rb.CarbohidratosG ?? rb.Carbohidratos_g ?? 0;
+    protBase  = rb.ProteinaG      ?? rb.Proteina_g      ?? 0;
+    grasaBase = rb.GrasaG         ?? rb.Grasa_g         ?? 0;
+    fibraBase = rb.FibraG         ?? rb.Fibra_g         ?? 0;
+    enerBase  = rb.EnergiaKcal    ?? rb.Energia_kcal    ?? 0;
     fc = base.Fraccion_Comestible !== undefined && base.Fraccion_Comestible > 0 ? base.Fraccion_Comestible : 1;
   } else {
     const factor100 = item.porcion_g > 0 ? 100 / item.porcion_g : 1;
@@ -128,6 +131,15 @@ export function applyPorcionDisplay(
   };
 }
 
+export interface SugerenciaAlimento {
+  macro: 'cho' | 'prot' | 'grasa' | 'fibra';
+  macroLabel: string;
+  deficit: number;       // gramos que faltan para la meta, post-escalado
+  categoria: string;     // macrogrupo a agregar
+  emoji: string;
+  cantidadG: number;     // porción sugerida en gramos
+}
+
 export interface OptimizacionPreview {
   factor: number;
   items: { nombre: string; actual: number; nuevo: number }[];
@@ -138,7 +150,26 @@ export interface OptimizacionPreview {
   nuevoEnergia: number;
   advertencias: string[];
   yaOptimizado: boolean;
+  sugerencias: SugerenciaAlimento[];
 }
+
+// Densidad típica de macros por 100g de cada macrogrupo (valores de referencia)
+const DENSIDAD_CATEGORIA: Record<string, { cho: number; prot: number; grasa: number; fibra: number }> = {
+  'Cereales y harinas':  { cho: 68, prot: 7,  grasa: 2,  fibra: 3   },
+  'Proteínas animales':  { cho: 0,  prot: 27, grasa: 8,  fibra: 0   },
+  'Lácteos y derivados': { cho: 6,  prot: 7,  grasa: 4,  fibra: 0   },
+  'Vegetales':           { cho: 6,  prot: 2,  grasa: 0,  fibra: 2.5 },
+  'Frutas':              { cho: 15, prot: 1,  grasa: 0.5, fibra: 2  },
+  'Grasas y semillas':   { cho: 4,  prot: 5,  grasa: 55, fibra: 4   },
+};
+
+// Categoría preferida y porción máxima razonable para cubrir cada macro deficiente
+const CATEGORIA_PARA_MACRO: Record<'cho' | 'prot' | 'grasa' | 'fibra', { categoria: string; emoji: string; maxG: number }> = {
+  cho:   { categoria: 'Cereales y harinas', emoji: '🍞', maxG: 120 },
+  prot:  { categoria: 'Proteínas animales', emoji: '🍗', maxG: 100 },
+  grasa: { categoria: 'Grasas y semillas',  emoji: '🥑', maxG: 30  },
+  fibra: { categoria: 'Vegetales',          emoji: '🥦', maxG: 250 },
+};
 
 export function previewOptimizar(items: PlanItemEdit[], metas: MacrosMeta): OptimizacionPreview {
   const C = items.reduce((s, a) => s + a.carb, 0);
@@ -158,6 +189,7 @@ export function previewOptimizar(items: PlanItemEdit[], metas: MacrosMeta): Opti
       nuevoEnergia: 0,
       advertencias: [],
       yaOptimizado: true,
+      sugerencias: [],
     };
   }
 
@@ -198,6 +230,36 @@ export function previewOptimizar(items: PlanItemEdit[], metas: MacrosMeta): Opti
   if (pct(nuevoGrasa, metas.grasa) < 78) advertencias.push('Grasas quedarían bajo la meta.');
   if (k !== kClamp) advertencias.push(`El factor se limitó a ${kClamp.toFixed(2)}× (ideal ${k.toFixed(2)}×).`);
 
+  // Sugerencias: para cada macro que quede > 12% por debajo de la meta
+  const sugerencias: SugerenciaAlimento[] = [];
+  const THRESHOLD = 0.88;
+  const macroChecks: { macro: 'cho' | 'prot' | 'grasa' | 'fibra'; label: string; nuevo: number; meta: number }[] = [
+    { macro: 'cho',   label: 'Carbohidratos', nuevo: nuevoCarb,  meta: metas.carb  },
+    { macro: 'prot',  label: 'Proteínas',     nuevo: nuevoProt,  meta: metas.prot  },
+    { macro: 'grasa', label: 'Grasas',        nuevo: nuevoGrasa, meta: metas.grasa },
+    { macro: 'fibra', label: 'Fibra',         nuevo: nuevoFibra, meta: metas.fibra },
+  ];
+
+  for (const { macro, label, nuevo, meta } of macroChecks) {
+    if (meta <= 0) continue;
+    if (nuevo / meta >= THRESHOLD) continue;
+
+    const deficit = meta - nuevo;
+    const cfg = CATEGORIA_PARA_MACRO[macro];
+    const densidad = DENSIDAD_CATEGORIA[cfg.categoria];
+    const densMacro = densidad ? densidad[macro === 'cho' ? 'cho' : macro] : 10;
+    const cantidadG = Math.min(cfg.maxG, Math.max(10, Math.round(deficit / (densMacro / 100))));
+
+    sugerencias.push({
+      macro,
+      macroLabel: label,
+      deficit: +deficit.toFixed(1),
+      categoria: cfg.categoria,
+      emoji: cfg.emoji,
+      cantidadG,
+    });
+  }
+
   return {
     factor: kClamp,
     items: proyeccion,
@@ -208,6 +270,7 @@ export function previewOptimizar(items: PlanItemEdit[], metas: MacrosMeta): Opti
     nuevoEnergia,
     advertencias,
     yaOptimizado,
+    sugerencias,
   };
 }
 
@@ -230,9 +293,15 @@ export function factorCoccionArroz(nombre: string): number {
 }
 
 export function buildItemFromCatalogo(a: AlimentoNutricional, porcionBrutaG: number): PlanItemEdit {
+  const r = a as any;
   const fc = a.Fraccion_Comestible !== undefined && a.Fraccion_Comestible > 0 ? a.Fraccion_Comestible : 1;
   const fCook = factorCoccionArroz(a.Nombre);
   const porcionComestible = porcionBrutaG * fc;
+  const carb100  = r.CarbohidratosG ?? r.Carbohidratos_g ?? 0;
+  const prot100  = r.ProteinaG      ?? r.Proteina_g      ?? 0;
+  const grasa100 = r.GrasaG         ?? r.Grasa_g         ?? 0;
+  const fibra100 = r.FibraG         ?? r.Fibra_g         ?? 0;
+  const ener100  = r.EnergiaKcal    ?? r.Energia_kcal    ?? 0;
   return {
     key: planItemKey(a.Id_Alimento, Date.now()),
     id_bd: a.Id_Alimento,
@@ -241,11 +310,11 @@ export function buildItemFromCatalogo(a: AlimentoNutricional, porcionBrutaG: num
     macrogrupo: a.Macrogrupo || '',
     porcion_g: porcionBrutaG,
     factor_coccion: fCook,
-    carb: +((a.Carbohidratos_g / 100) * porcionComestible).toFixed(2),
-    prot: +((a.Proteina_g / 100) * porcionComestible).toFixed(2),
-    grasa: +((a.Grasa_g / 100) * porcionComestible).toFixed(2),
-    fibra: +((a.Fibra_g / 100) * porcionComestible).toFixed(2),
-    energia: +((a.Energia_kcal / 100) * porcionComestible).toFixed(2),
+    carb:   +((carb100  / 100) * porcionComestible).toFixed(2),
+    prot:   +((prot100  / 100) * porcionComestible).toFixed(2),
+    grasa:  +((grasa100 / 100) * porcionComestible).toFixed(2),
+    fibra:  +((fibra100 / 100) * porcionComestible).toFixed(2),
+    energia: +((ener100  / 100) * porcionComestible).toFixed(2),
   };
 }
 

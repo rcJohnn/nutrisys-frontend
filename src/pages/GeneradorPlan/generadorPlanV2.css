@@ -308,6 +308,43 @@
   padding: 0 12px 12px;
 }
 
+.gp-fg-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 0 4px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+}
+
+.gp-fg-pag-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gp-fg-pag-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.gp-fg-pag-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.gp-fg-pag-info {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .gp-food-item {
   border: 1px solid #f1f5f9;
   border-radius: 10px;
@@ -884,6 +921,145 @@
   color: #7a5800;
 }
 
+.gp-opt-sugerencias {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+
+.gp-opt-sug-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0 0 10px;
+}
+
+.gp-opt-sug-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #15803d;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: background 0.15s;
+}
+
+.gp-opt-sug-btn:last-child {
+  margin-bottom: 0;
+}
+
+.gp-opt-sug-btn:hover {
+  background: #dcfce7;
+}
+
+.gp-add-cat-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e0f2fe;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #0369a1;
+  margin-bottom: 8px;
+}
+
+.gp-add-cat-badge button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0369a1;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+/* ── Add panel agrupado ── */
+.gp-add-grupos {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.gp-add-grupo {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.gp-add-grupo:last-child {
+  border-bottom: none;
+}
+
+.gp-add-grupo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+  user-select: none;
+}
+
+.gp-add-grupo-header::-webkit-details-marker { display: none; }
+
+.gp-add-grupo-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.gp-add-grupo-name {
+  flex: 1;
+}
+
+.gp-add-grupo-count {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.gp-add-grupo-chevron {
+  font-size: 12px;
+  color: #94a3b8;
+  transition: transform 0.15s;
+}
+
+details.gp-add-grupo[open] .gp-add-grupo-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── ListaTab ranking ── */
+.gp-nr-buscar-btn {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+.gp-nr-empty {
+  font-size: 13px;
+  color: #64748b;
+  padding: 10px 0;
+}
+
 .gp-modal-actions {
   display: flex;
   gap: 10px;
@@ -977,6 +1153,28 @@
 }
 
 /* IA tab */
+.gp-ia-tiempo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.gp-ia-tiempo-tab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #006c49;
+  background: #fff;
+  color: #006c49;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.gp-ia-tiempo-tab.active,
+.gp-ia-tiempo-tab:hover {
+  background: #006c49;
+  color: #fff;
+}
 .gp-ia-empty-ico {
   font-size: 3rem;
   margin-bottom: 12px;

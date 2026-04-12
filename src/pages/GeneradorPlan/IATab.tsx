@@ -31,27 +31,13 @@ function buildPrompt(p: PlanIAContext, alterna: boolean): string {
   );
 }
 
-const IATab: React.FC<{
+const PlanRecetaPanel: React.FC<{
+  plan: PlanIAContext;
   idUsuario: number;
-  plan: PlanIAContext | null;
   toast: (m: string) => void;
-}> = ({ idUsuario, plan, toast }) => {
+}> = ({ plan, idUsuario, toast }) => {
   const [texto, setTexto] = useState('');
   const [loading, setLoading] = useState(false);
-
-  if (!plan) {
-    return (
-      <div className="gp-tab-panel">
-        <div className="gp-ia-empty">
-          <div className="gp-ia-empty-ico">🍽️</div>
-          <p>
-            Primero generá y confirmá tu plan en la pestaña <strong>Generador de plan</strong> con &quot;Confirmar y generar
-            ideas con IA&quot;.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const pedir = async (alterna: boolean) => {
     setLoading(true);
@@ -84,51 +70,93 @@ const IATab: React.FC<{
     }
   };
 
-  const nombre = plan.tiempo.replace('AM', ' AM').replace('PM', ' PM');
+  return (
+    <>
+      <div className="gp-ia-header">
+        <div className="gp-ia-icon">🤖</div>
+        <div>
+          <div className="gp-ia-title">Ideas de comidas con IA</div>
+          <div className="gp-ia-sub">
+            Plan de {plan.tiempo.replace('AM', ' AM').replace('PM', ' PM')} · {plan.totales.energia} kcal
+          </div>
+        </div>
+      </div>
+      <div className="gp-plan-chips">
+        {plan.items.map((a) => {
+          const info = GP_MACROGRUPOS[a.macrogrupo] || GP_MACROGRUPOS[a.categoria] || { emoji: '🍽️' };
+          return (
+            <span key={a.key} className="gp-plan-chip">
+              {info.emoji} {a.nombre} <strong>{a.porcion_g}g</strong>
+            </span>
+          );
+        })}
+      </div>
+      <div className="gp-ia-actions">
+        <button type="button" className="gp-btn gp-btn-primary" disabled={loading} onClick={() => pedir(false)}>
+          ✨ Sugerirme una receta
+        </button>
+        <button type="button" className="gp-btn gp-btn-outline" disabled={loading} onClick={() => pedir(true)}>
+          🎲 Otra sugerencia
+        </button>
+      </div>
+      {loading && (
+        <div className="gp-loading-inline">
+          <div className="gp-spinner sm" /> Generando…
+        </div>
+      )}
+      {texto && (
+        <div className="gp-ia-response-wrap">
+          <div className="gp-ia-response">{texto.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
+          <button type="button" className="gp-btn gp-btn-primary" onClick={enviar}>
+            📧 Enviar receta por correo
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
+
+const IATab: React.FC<{
+  idUsuario: number;
+  planes: PlanIAContext[];
+  toast: (m: string) => void;
+}> = ({ idUsuario, planes, toast }) => {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  if (!planes || planes.length === 0) {
+    return (
+      <div className="gp-tab-panel">
+        <div className="gp-ia-empty">
+          <div className="gp-ia-empty-ico">🍽️</div>
+          <p>
+            Primero generá y confirmá tu plan en la pestaña <strong>Generador de plan</strong> con &quot;Confirmar y generar
+            ideas con IA&quot;, o enviá los planes por correo y elegí generar recetas.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const plan = planes[selectedIdx] ?? planes[0];
 
   return (
     <div className="gp-tab-panel">
-      <div className="gp-ia-card">
-        <div className="gp-ia-header">
-          <div className="gp-ia-icon">🤖</div>
-          <div>
-            <div className="gp-ia-title">Ideas de comidas con IA</div>
-            <div className="gp-ia-sub">
-              Plan de {nombre} · {plan.totales.energia} kcal
-            </div>
-          </div>
-        </div>
-        <div className="gp-plan-chips">
-          {plan.items.map((a) => {
-            const info = GP_MACROGRUPOS[a.macrogrupo] || GP_MACROGRUPOS[a.categoria] || { emoji: '🍽️' };
-            return (
-              <span key={a.key} className="gp-plan-chip">
-                {info.emoji} {a.nombre} <strong>{a.porcion_g}g</strong>
-              </span>
-            );
-          })}
-        </div>
-        <div className="gp-ia-actions">
-          <button type="button" className="gp-btn gp-btn-primary" disabled={loading} onClick={() => pedir(false)}>
-            ✨ Sugerirme una receta
-          </button>
-          <button type="button" className="gp-btn gp-btn-outline" disabled={loading} onClick={() => pedir(true)}>
-            🎲 Otra sugerencia
-          </button>
-        </div>
-        {loading && (
-          <div className="gp-loading-inline">
-            <div className="gp-spinner sm" /> Generando…
-          </div>
-        )}
-        {texto && (
-          <div className="gp-ia-response-wrap">
-            <div className="gp-ia-response">{texto.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
-            <button type="button" className="gp-btn gp-btn-primary" onClick={enviar}>
-              📧 Enviar receta por correo
+      {planes.length > 1 && (
+        <div className="gp-ia-tiempo-tabs">
+          {planes.map((p, i) => (
+            <button
+              key={p.tiempo}
+              type="button"
+              className={`gp-ia-tiempo-tab${i === selectedIdx ? ' active' : ''}`}
+              onClick={() => setSelectedIdx(i)}
+            >
+              {p.tiempo.replace('AM', ' AM').replace('PM', ' PM')}
             </button>
-          </div>
-        )}
+          ))}
+        </div>
+      )}
+      <div className="gp-ia-card">
+        <PlanRecetaPanel key={plan.tiempo} plan={plan} idUsuario={idUsuario} toast={toast} />
       </div>
     </div>
   );

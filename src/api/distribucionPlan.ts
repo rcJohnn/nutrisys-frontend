@@ -5,20 +5,23 @@ const MEAL_KEYS = ['Desayuno', 'MeriendaAM', 'Almuerzo', 'MeriendaPM', 'Cena'] a
 export type TiempoComidaKey = (typeof MEAL_KEYS)[number];
 
 function pickDistribucionForMeal(d: DistribucionMacrosData, meal: TiempoComidaKey) {
-  // Mapear tiempo de comida a los campos del DTO (snake_case del backend, mayúsculas en CHO/PROT/GRASA/FIBRA)
+  // Las keys llegan normalizadas por el interceptor de axios (normalizeKeys):
+  // _([a-z]) → UpperCase, primer letra → Mayúscula.
+  // Ejemplo: desayuno_CHO_g → _g (minúscula) → G → Desayuno_CHOG
   const map: Record<TiempoComidaKey, [string, string, string, string]> = {
-    Desayuno:   ['desayuno_CHO_g',   'desayuno_Prot_g',   'desayuno_Grasa_g',   'desayuno_Fibra_g'],
-    MeriendaAM: ['meriendaAM_CHO_g', 'meriendaAM_Prot_g', 'meriendaAM_Grasa_g', 'meriendaAM_Fibra_g'],
-    Almuerzo:   ['almuerzo_CHO_g',   'almuerzo_Prot_g',   'almuerzo_Grasa_g',   'almuerzo_Fibra_g'],
-    MeriendaPM: ['meriendaPM_CHO_g', 'meriendaPM_Prot_g', 'meriendaPM_Grasa_g', 'meriendaPM_Fibra_g'],
-    Cena:       ['cena_CHO_g',       'cena_Prot_g',       'cena_Grasa_g',       'cena_Fibra_g'],
+    Desayuno:   ['Desayuno_CHOG',   'Desayuno_ProtG',   'Desayuno_GrasaG',   'Desayuno_FibraG'],
+    MeriendaAM: ['MeriendaAM_CHOG', 'MeriendaAM_ProtG', 'MeriendaAM_GrasaG', 'MeriendaAM_FibraG'],
+    Almuerzo:   ['Almuerzo_CHOG',   'Almuerzo_ProtG',   'Almuerzo_GrasaG',   'Almuerzo_FibraG'],
+    MeriendaPM: ['MeriendaPM_CHOG', 'MeriendaPM_ProtG', 'MeriendaPM_GrasaG', 'MeriendaPM_FibraG'],
+    Cena:       ['Cena_CHOG',       'Cena_ProtG',       'Cena_GrasaG',       'Cena_FibraG'],
   };
   const [kCho, kProt, kGrasa, kFibra] = map[meal];
+  const raw = d as any;
   return {
-    cho:   Number(d[kCho as keyof DistribucionMacrosData] ?? 0) || 0,
-    prot:  Number(d[kProt as keyof DistribucionMacrosData] ?? 0) || 0,
-    grasa: Number(d[kGrasa as keyof DistribucionMacrosData] ?? 0) || 0,
-    fibra: Number(d[kFibra as keyof DistribucionMacrosData] ?? 0) || 0,
+    cho:   Number(raw[kCho]   ?? 0) || 0,
+    prot:  Number(raw[kProt]  ?? 0) || 0,
+    grasa: Number(raw[kGrasa] ?? 0) || 0,
+    fibra: Number(raw[kFibra] ?? 0) || 0,
   };
 }
 

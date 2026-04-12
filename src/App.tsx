@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AlertaProvider } from './components/Alerta/AlertaContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import MainLayout from './layout/MainLayout';
@@ -32,6 +33,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AlertaProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -89,6 +91,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
+      </AlertaProvider>
     </QueryClientProvider>
   );
 }

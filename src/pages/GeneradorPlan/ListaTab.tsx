@@ -1,10 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { AlimentoNutricional } from '../../api/plan';
 import { GP_MACROGRUPOS, MACROCHIP_FILTERS, NUTRIENT_RANK_OPTIONS } from './constants';
 
+const PAGE_SIZE = 10;
+
 function num(a: AlimentoNutricional, field: string): number {
-  const v = (a as any)[field];
-  return typeof v === 'number' && !Number.isNaN(v) ? v : 0;
+  const raw = a as any;
+  const v = raw[field];
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  // Intenta la clave normalizada: _([a-z]) → mayúscula + capitaliza primer char
+  const normalized = field
+    .replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+    .replace(/^[a-z]/, (c) => c.toUpperCase());
+  const v2 = raw[normalized];
+  return typeof v2 === 'number' && !Number.isNaN(v2) ? v2 : 0;
 }
 
 function fidTag(emoji: string, label: string, valor: number, unidad: string, bg: string, color: string) {
@@ -28,7 +37,14 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
   const [filterCat, setFilterCat] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [rankField, setRankField] = useState('');
+  const [appliedRankField, setAppliedRankField] = useState('');
   const [rankTop, setRankTop] = useState(15);
+  const [groupPages, setGroupPages] = useState<Record<string, number>>({});
+
+  // Resetear páginas cuando cambia el filtro o la búsqueda
+  useEffect(() => {
+    setGroupPages({});
+  }, [filterCat, search]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -51,13 +67,13 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
   }, [filtered]);
 
   const rankList = useMemo(() => {
-    if (!rankField) return [];
+    if (!appliedRankField) return [];
     const sorted = [...alimentos]
-      .map((a) => ({ a, v: num(a, rankField) }))
+      .map((a) => ({ a, v: num(a, appliedRankField) }))
       .filter((x) => x.v > 0)
       .sort((x, y) => y.v - x.v);
     return sorted.slice(0, Math.min(50, Math.max(5, rankTop)));
-  }, [alimentos, rankField, rankTop]);
+  }, [alimentos, appliedRankField, rankTop]);
 
   const abrirGrupos = filterCat !== 'all' || !!search.trim();
 
@@ -74,7 +90,10 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
           <select
             className="gp-nr-select"
             value={rankField}
-            onChange={(e) => setRankField(e.target.value)}
+            onChange={(e) => {
+              setRankField(e.target.value);
+              setAppliedRankField('');
+            }}
           >
             <option value="">Seleccioná un nutriente…</option>
             {['Macronutrientes', 'Minerales', 'Vitaminas', 'Ácidos grasos'].map((g) => (
@@ -98,8 +117,19 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
               onChange={(e) => setRankTop(Number(e.target.value) || 15)}
             />
           </div>
+          <button
+            type="button"
+            className="gp-btn gp-btn-primary gp-nr-buscar-btn"
+            disabled={!rankField}
+            onClick={() => setAppliedRankField(rankField)}
+          >
+            Buscar
+          </button>
         </div>
-        {rankField && rankList.length > 0 && (
+        {appliedRankField && rankList.length === 0 && (
+          <div className="gp-nr-empty">Sin resultados para este nutriente.</div>
+        )}
+        {appliedRankField && rankList.length > 0 && (
           <div className="gp-nr-result">
             <ol className="gp-nr-list">
               {rankList.map(({ a, v }, i) => (
@@ -150,6 +180,11 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
         <div className="gp-food-groups-root">
           {Object.entries(grupos).map(([cat, items]) => {
             const info = GP_MACROGRUPOS[cat] || GP_MACROGRUPOS['Sin clasificar'];
+            const page = groupPages[cat] ?? 0;
+            const totalPages = Math.ceil(items.length / PAGE_SIZE);
+            const pageItems = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+            const setPage = (p: number) => setGroupPages((prev) => ({ ...prev, [cat]: p }));
+
             return (
               <details key={cat} className={`gp-food-group${abrirGrupos ? ' open' : ''}`} open={abrirGrupos}>
                 <summary className="gp-fg-header">
@@ -165,7 +200,7 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
                   <span className="gp-fg-chevron">▾</span>
                 </summary>
                 <div className="gp-fg-body">
-                  {items.map((a) => (
+                  {pageItems.map((a) => (
                     <details key={a.Id_Alimento} className="gp-food-item">
                       <summary className="gp-food-item-header">
                         <span className="gp-food-item-name">{a.Nombre}</span>
@@ -176,11 +211,11 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
                           Macronutrientes <span className="gp-fid-unit">por 100g</span>
                         </div>
                         <div className="gp-fid-macros">
-                          {fidTag('⚡', 'Energía', a.Energia_kcal, 'kcal', '#fff3cd', '#856404')}
-                          {fidTag('💪', 'Proteína', a.Proteina_g, 'g', '#d1e7dd', '#0f5132')}
-                          {fidTag('🌾', 'Carbohidratos', a.Carbohidratos_g, 'g', '#cfe2ff', '#084298')}
-                          {fidTag('🥑', 'Grasas', a.Grasa_g, 'g', '#f8d7da', '#842029')}
-                          {fidTag('🌿', 'Fibra', a.Fibra_g, 'g', '#d1e7dd', '#0a3622')}
+                          {fidTag('⚡', 'Energía', num(a, 'Energia_kcal'), 'kcal', '#fff3cd', '#856404')}
+                          {fidTag('💪', 'Proteína', num(a, 'Proteina_g'), 'g', '#d1e7dd', '#0f5132')}
+                          {fidTag('🌾', 'Carbohidratos', num(a, 'Carbohidratos_g'), 'g', '#cfe2ff', '#084298')}
+                          {fidTag('🥑', 'Grasas', num(a, 'Grasa_g'), 'g', '#f8d7da', '#842029')}
+                          {fidTag('🌿', 'Fibra', num(a, 'Fibra_g'), 'g', '#d1e7dd', '#0a3622')}
                           {fidTag('🫀', 'Colesterol', num(a, 'Colesterol_mg'), 'mg', '#f8d7da', '#842029')}
                         </div>
                         <div className="gp-fid-section-title">Minerales</div>
@@ -213,6 +248,30 @@ const ListaTab: React.FC<{ alimentos: AlimentoNutricional[]; loading: boolean }>
                       </div>
                     </details>
                   ))}
+
+                  {totalPages > 1 && (
+                    <div className="gp-fg-paginacion">
+                      <button
+                        type="button"
+                        className="gp-fg-pag-btn"
+                        disabled={page === 0}
+                        onClick={() => setPage(page - 1)}
+                      >
+                        ← Anterior
+                      </button>
+                      <span className="gp-fg-pag-info">
+                        {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, items.length)} de {items.length}
+                      </span>
+                      <button
+                        type="button"
+                        className="gp-fg-pag-btn"
+                        disabled={page >= totalPages - 1}
+                        onClick={() => setPage(page + 1)}
+                      >
+                        Siguiente →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </details>
             );
