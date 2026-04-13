@@ -41,26 +41,22 @@ export const completarConsultaFinal = async (
   return data;
 };
 
-// ── Historia Clínica ───────────────────────────────────────────────────────
+// ── Historia Clínica principal (datos estables del paciente) ──────────────
 
 export interface HistoriaClinicaData {
+  Id_Historia?: number;
   Id_Usuario: number;
-  Objetivos_Clinicos: string;
-  Calidad_Sueno: string;
-  Funcion_Intestinal: string;
   Fuma: boolean;
   Consume_Alcohol: boolean;
   Frecuencia_Alcohol: string;
-  Actividad_Fisica: string;
-  Medicamentos: string;
-  Cirugias_Recientes: string;
   Embarazo: boolean;
   Lactancia: boolean;
-  Alimentos_Favoritos: string;
-  Alimentos_No_Gustan: string;
   Intolerancias: string;
   Alergias_Alimentarias: string;
-  Ingesta_Agua_Diaria: string;
+  Objetivos_Clinicos?: string;
+  Actividad_Fisica?: string;
+  Medicamentos?: string;
+  IdUsuario_Modificacion?: number;
 }
 
 export const getHistoriaClinica = async (idUsuario: number): Promise<HistoriaClinicaData | null> => {
@@ -72,38 +68,58 @@ export const getHistoriaClinica = async (idUsuario: number): Promise<HistoriaCli
   }
 };
 
-export const saveHistoriaClinica = async (payload: HistoriaClinicaData, existe: boolean) => {
-  if (existe) {
-    const { data } = await apiClient.put(`/HistoriaClinica/${payload.Id_Usuario}`, payload);
-    return data;
-  }
-  const { data } = await apiClient.post('/HistoriaClinica', payload);
+export const updateHistoriaClinica = async (idUsuario: number, payload: Omit<HistoriaClinicaData, 'Id_Usuario' | 'Id_Historia'>) => {
+  const { data } = await apiClient.put(`/HistoriaClinica/${idUsuario}`, { Id_Usuario: idUsuario, ...payload });
   return data;
 };
 
-// ── Evaluación Cuantitativa ────────────────────────────────────────────────
+// ── Historia Clínica Historial (datos variables por consulta) ─────────────
+
+export interface HistoriaClinicaHistorialData {
+  Id_Historial?: number;
+  Id_Consulta: number;
+  Calidad_Sueno: string;
+  Funcion_Intestinal: string;
+  Actividad_Fisica: string;
+  Medicamentos: string;
+  Ingesta_Agua_Diaria: string;
+  Objetivos_Clinicos: string;
+  Alimentos_Favoritos: string;
+  Alimentos_No_Gustan: string;
+}
+
+export const getHistoriaClinicaHistorial = async (idConsulta: number): Promise<HistoriaClinicaHistorialData | null> => {
+  try {
+    const { data } = await apiClient.get(`/HistoriaClinica/historial/${idConsulta}`);
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+export const saveHistoriaClinicaHistorial = async (payload: HistoriaClinicaHistorialData) => {
+  const { data } = await apiClient.post('/HistoriaClinica/historial', payload);
+  return data;
+};
+
+// ── Evaluación Cuantitativa (ligada a consulta) ────────────────────────────
 
 export interface EvaluacionItem {
   Tiempo_Comida: string;
   Consumo_Usual: string;
 }
 
-export interface EvaluacionCuantitativaData {
-  Id_Usuario: number;
-  Evaluaciones: EvaluacionItem[];
-}
-
-export const getEvaluacionCuantitativa = async (idUsuario: number): Promise<EvaluacionItem[]> => {
+export const getEvaluacionCuantitativa = async (idConsulta: number): Promise<EvaluacionItem[]> => {
   try {
-    const { data } = await apiClient.get(`/EvaluacionCuantitativa?idUsuario=${idUsuario}`);
+    const { data } = await apiClient.get(`/EvaluacionCuantitativa?consultaId=${idConsulta}`);
     return data ?? [];
   } catch {
     return [];
   }
 };
 
-export const saveEvaluacionCuantitativa = async (idUsuario: number, evaluaciones: EvaluacionItem[]) => {
-  const { data } = await apiClient.post('/EvaluacionCuantitativa/batch', { Id_Usuario: idUsuario, Evaluaciones: evaluaciones });
+export const saveEvaluacionCuantitativa = async (idConsulta: number, evaluaciones: EvaluacionItem[]) => {
+  const { data } = await apiClient.post('/EvaluacionCuantitativa/batch', { Id_Consulta: idConsulta, Evaluaciones: evaluaciones });
   return data;
 };
 
@@ -147,10 +163,21 @@ export const saveAnalisisBioquimico = async (payload: AnalisisBioquimicoData) =>
 
 // ── Pliegues Cutáneos ──────────────────────────────────────────────────────
 
+// Tipos de pliegues (deben coincidir con la tabla Tipos_Pliegues en BD)
+export const TIPOS_PLIEGUES: { id: number; nombre: string }[] = [
+  { id: 1, nombre: 'Tricipital' },
+  { id: 2, nombre: 'Subescapular' },
+  { id: 3, nombre: 'Bicipital' },
+  { id: 4, nombre: 'Suprailiaco' },
+  { id: 5, nombre: 'Abdominal' },
+  { id: 6, nombre: 'Muslo' },
+  { id: 7, nombre: 'Pantorrilla' },
+];
+
 export interface PliegueData {
   Id_Pliegue?: number;
   Id_Consulta: number;
-  Tipo_Pliegue: string;
+  Tipo_Pliegue: string; // nombre del tipo (viene del JOIN al hacer GET)
   Valor_mm: number;
 }
 
@@ -163,8 +190,12 @@ export const getPliegues = async (idConsulta: number): Promise<PliegueData[]> =>
   }
 };
 
-export const savePliegue = async (payload: PliegueData) => {
-  const { data } = await apiClient.post('/PlieguesCutaneos', payload);
+export const savePliegue = async (idConsulta: number, idTipoPliegue: number, valorMm: number) => {
+  const { data } = await apiClient.post('/PlieguesCutaneos', {
+    Id_Consulta: idConsulta,
+    Id_Tipo_Pliegue: idTipoPliegue,
+    Valor_mm: valorMm,
+  });
   return data;
 };
 

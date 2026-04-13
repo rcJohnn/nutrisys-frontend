@@ -104,6 +104,13 @@ const MantenimientoConsultas: React.FC = () => {
     }
   }, [userType, userId]);
 
+  // Auto-seleccionar médico cuando es perfil Médico
+  useEffect(() => {
+    if (userType === 'M' && userId > 0 && !isEdit) {
+      setForm(f => ({ ...f, idMedico: userId }));
+    }
+  }, [userType, userId, isEdit]);
+
   // Search pacientes with debounce
   const buscarPacientes = useCallback((term: string) => {
     if (!term || term.length < 2) {
@@ -288,6 +295,7 @@ const MantenimientoConsultas: React.FC = () => {
                   name="idMedico"
                   className="form-control input-style"
                   required
+                  disabled={userType === 'M'}
                   value={form.idMedico}
                   onChange={handleMedicoChange}
                 >
@@ -316,11 +324,20 @@ const MantenimientoConsultas: React.FC = () => {
                         className={`mc-clinica-card ${form.idClinica === c.id ? 'selected' : ''}`}
                         onClick={() => setForm(f => ({ ...f, idClinica: c.id }))}
                       >
-                        <div className="mc-clinica-logo-placeholder">
-                          <i className="fa fa-hospital-o"></i>
-                        </div>
+                        {c.Logo_Url ? (
+                          <img src={c.Logo_Url} alt={c.nombre} className="mc-clinica-logo-img" />
+                        ) : (
+                          <div className="mc-clinica-logo-placeholder">
+                            <i className="fa fa-hospital-o"></i>
+                          </div>
+                        )}
                         <div className="mc-clinica-nombre">{c.nombre}</div>
                         <div className="mc-clinica-dir">{c.direccion}</div>
+                        {form.idClinica === c.id && (
+                          <div className="mc-clinica-confirm-overlay">
+                            <i className="fa fa-check-circle"></i> Confirmada
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -3,31 +3,25 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getHistoriaClinica,
-  saveHistoriaClinica,
   updateHistoriaClinica,
-  getEvaluacionCuantitativa,
-  saveEvaluacionCuantitativaBatch,
   getAnalisisBioquimicoList,
   saveAnalisisBioquimico,
 } from '../api/expediente';
 import { getUsuarioById } from '../api/usuarios';
 import type {
-  EvaluacionCuantitativaItem,
   AnalisisBioquimicoResponse,
   SaveHistoriaClinicaData,
-  SaveEvaluacionCuantitativaData,
   SaveAnalisisBioquimicoData,
 } from '../api/expediente';
 import './ExpedientePaciente.css';
 
-const TIEMPOS_COMIDA = ['Desayuno', 'Merienda AM', 'Almuerzo', 'Merienda PM', 'Cena'];
 
 const ExpedientePaciente: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'hc' | 'ec' | 'ab'>('hc');
+  const [activeTab, setActiveTab] = useState<'hc' | 'ab'>('hc');
 
   // Info del usuario logueado (para auditoría)
   const [currentUserId, setCurrentUserId] = useState(0);
@@ -52,90 +46,35 @@ const ExpedientePaciente: React.FC = () => {
   });
 
   const [hcForm, setHcForm] = useState<SaveHistoriaClinicaData>({
-    Objetivos_Clinicos: '',
-    Calidad_Sueno: '',
-    Funcion_Intestinal: '',
     Fuma: false,
     Consume_Alcohol: false,
     Frecuencia_Alcohol: '',
-    Actividad_Fisica: '',
-    Medicamentos: '',
-    Cirugias_Recientes: '',
     Embarazo: false,
     Lactancia: false,
-    Alimentos_Favoritos: '',
-    Alimentos_No_Gustan: '',
     Intolerancias: '',
     Alergias_Alimentarias: '',
-    Ingesta_Agua_Diaria: '',
   });
 
   useEffect(() => {
     if (historiaClinica) {
       setHcForm({
-        Objetivos_Clinicos: historiaClinica.Objetivos_Clinicos || '',
-        Calidad_Sueno: historiaClinica.Calidad_Sueno || '',
-        Funcion_Intestinal: historiaClinica.Funcion_Intestinal || '',
         Fuma: historiaClinica.Fuma || false,
         Consume_Alcohol: historiaClinica.Consume_Alcohol || false,
         Frecuencia_Alcohol: historiaClinica.Frecuencia_Alcohol || '',
-        Actividad_Fisica: historiaClinica.Actividad_Fisica || '',
-        Medicamentos: historiaClinica.Medicamentos || '',
-        Cirugias_Recientes: historiaClinica.Cirugias_Recientes || '',
         Embarazo: historiaClinica.Embarazo || false,
         Lactancia: historiaClinica.Lactancia || false,
-        Alimentos_Favoritos: historiaClinica.Alimentos_Favoritos || '',
-        Alimentos_No_Gustan: historiaClinica.Alimentos_No_Gustan || '',
         Intolerancias: historiaClinica.Intolerancias || '',
         Alergias_Alimentarias: historiaClinica.Alergias_Alimentarias || '',
-        Ingesta_Agua_Diaria: historiaClinica.Ingesta_Agua_Diaria || '',
       });
     }
   }, [historiaClinica]);
 
   const hcSaveMutation = useMutation({
     mutationFn: (data: SaveHistoriaClinicaData) =>
-      historiaClinica
-        ? updateHistoriaClinica(Number(id), { ...data, Id_Historia: historiaClinica.Id_Historia, IdUsuario_Modificacion: currentUserId })
-        : saveHistoriaClinica({ ...data, Id_Usuario: Number(id!), IdUsuario_Modificacion: currentUserId }),
+      updateHistoriaClinica(Number(id), { ...data, IdUsuario_Modificacion: currentUserId }),
     onSuccess: () => {
       alert('Historia clínica guardada exitosamente');
       queryClient.invalidateQueries({ queryKey: ['historia-clinica', id] });
-    },
-    onError: (err: any) => alert(err?.response?.data?.error || 'Error al guardar'),
-  });
-
-  // ── Evaluación Cuantitativa ─────────────────────────
-  const { data: evalData = [], isLoading: loadingEC } = useQuery({
-    queryKey: ['evaluacion-cuantitativa', id],
-    queryFn: () => getEvaluacionCuantitativa(Number(id)),
-    enabled: Boolean(id),
-  });
-
-  const [ecForm, setEcForm] = useState<Record<string, string>>({
-    Desayuno: '',
-    'Merienda AM': '',
-    Almuerzo: '',
-    'Merienda PM': '',
-    Cena: '',
-  });
-
-  useEffect(() => {
-    if (evalData.length > 0) {
-      const map: Record<string, string> = {};
-      evalData.forEach((item: EvaluacionCuantitativaItem) => {
-        map[item.Tiempo_Comida] = item.Consumo_Usual || '';
-      });
-      setEcForm(prev => ({ ...prev, ...map }));
-    }
-  }, [evalData]);
-
-  const ecSaveMutation = useMutation({
-    mutationFn: (data: SaveEvaluacionCuantitativaData) =>
-      saveEvaluacionCuantitativaBatch({ Id_Usuario: Number(id), Evaluaciones: data.Evaluaciones }),
-    onSuccess: () => {
-      alert('Evaluación cuantitativa guardada exitosamente');
-      queryClient.invalidateQueries({ queryKey: ['evaluacion-cuantitativa', id] });
     },
     onError: (err: any) => alert(err?.response?.data?.error || 'Error al guardar'),
   });
@@ -204,10 +143,6 @@ const ExpedientePaciente: React.FC = () => {
     setHcForm(prev => ({ ...prev, [name]: parsedValue }));
   };
 
-  const handleEcChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEcForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
   const handleAbChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const parsedValue = type === 'number' ? (value ? parseFloat(value) : null) : value;
@@ -217,14 +152,6 @@ const ExpedientePaciente: React.FC = () => {
   const handleHcSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     hcSaveMutation.mutate(hcForm);
-  };
-
-  const handleEcSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const evaluaciones = TIEMPOS_COMIDA
-      .map(tiempo => ({ Tiempo_Comida: tiempo, Consumo_Usual: ecForm[tiempo] || '' }))
-      .filter(ev => ev.Consumo_Usual.trim() !== '');
-    ecSaveMutation.mutate({ Evaluaciones: evaluaciones });
   };
 
   const handleAbSubmit = (e: React.FormEvent) => {
@@ -242,7 +169,7 @@ const ExpedientePaciente: React.FC = () => {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
   };
 
-  const isSaving = hcSaveMutation.isPending || ecSaveMutation.isPending || abSaveMutation.isPending;
+  const isSaving = hcSaveMutation.isPending || abSaveMutation.isPending;
 
   if (!id) {
     return (
@@ -287,15 +214,6 @@ const ExpedientePaciente: React.FC = () => {
         </li>
         <li className="nav-item">
           <button
-            className={`nav-link ${activeTab === 'ec' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ec')}
-            type="button"
-          >
-            <i className="fa fa-cutlery"></i> Evaluación Cuantitativa
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
             className={`nav-link ${activeTab === 'ab' ? 'active' : ''}`}
             onClick={() => setActiveTab('ab')}
             type="button"
@@ -319,53 +237,10 @@ const ExpedientePaciente: React.FC = () => {
                     <h3>Historia Clínica</h3>
                   </div>
                   <div className="card-body">
-
-                    <div className="form-row">
-                      <div className="form-group col-md-12">
-                        <label className="input__label">Objetivos Clínicos</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Objetivos_Clinicos"
-                          rows={3}
-                          value={hcForm.Objetivos_Clinicos}
-                          onChange={handleHcChange}
-                          placeholder="Objetivos del tratamiento..."
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Calidad del Sueño</label>
-                        <select
-                          className="form-control input-style"
-                          name="Calidad_Sueno"
-                          value={hcForm.Calidad_Sueno}
-                          onChange={handleHcChange}
-                        >
-                          <option value="">Seleccione...</option>
-                          <option value="Buena">Buena</option>
-                          <option value="Regular">Regular</option>
-                          <option value="Mala">Mala</option>
-                          <option value="Insomnia">Insomnia</option>
-                        </select>
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Función Intestinal</label>
-                        <select
-                          className="form-control input-style"
-                          name="Funcion_Intestinal"
-                          value={hcForm.Funcion_Intestinal}
-                          onChange={handleHcChange}
-                        >
-                          <option value="">Seleccione...</option>
-                          <option value="Normal">Normal</option>
-                          <option value="Estreñimiento">Estreñimiento</option>
-                          <option value="Diarrea">Diarrea</option>
-                          <option value="Irregular">Irregular</option>
-                        </select>
-                      </div>
-                    </div>
+                    <p className="text-muted mb-3">
+                      <i className="fa fa-info-circle me-1" />
+                      Datos estables del paciente. Los datos específicos de cada consulta (objetivos, actividad, medicamentos, etc.) se registran desde la consulta correspondiente.
+                    </p>
 
                     <div className="form-row">
                       <div className="form-group col-md-3">
@@ -434,90 +309,6 @@ const ExpedientePaciente: React.FC = () => {
 
                     <div className="form-row">
                       <div className="form-group col-md-6">
-                        <label className="input__label">Actividad Física</label>
-                        <input
-                          type="text"
-                          className="form-control input-style"
-                          name="Actividad_Fisica"
-                          value={hcForm.Actividad_Fisica}
-                          onChange={handleHcChange}
-                          placeholder="Tipo y frecuencia de actividad física"
-                          maxLength={200}
-                        />
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Ingesta de Agua Diaria</label>
-                        <input
-                          type="text"
-                          className="form-control input-style"
-                          name="Ingesta_Agua_Diaria"
-                          value={hcForm.Ingesta_Agua_Diaria}
-                          onChange={handleHcChange}
-                          placeholder="Ej: 2 litros"
-                          maxLength={100}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Medicamentos</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Medicamentos"
-                          rows={2}
-                          value={hcForm.Medicamentos}
-                          onChange={handleHcChange}
-                          placeholder="Medicamentos que consume actualmente..."
-                          maxLength={500}
-                        />
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Cirugías Recientes</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Cirugias_Recientes"
-                          rows={2}
-                          value={hcForm.Cirugias_Recientes}
-                          onChange={handleHcChange}
-                          placeholder="Cirugías o procedimientos recientes..."
-                          maxLength={500}
-                        />
-                      </div>
-                    </div>
-
-                    <hr />
-                    <h6 className="text-muted mb-3">Preferencias Alimentarias</h6>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Alimentos Favoritos</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Alimentos_Favoritos"
-                          rows={2}
-                          value={hcForm.Alimentos_Favoritos}
-                          onChange={handleHcChange}
-                          placeholder="Alimentos que le gustan..."
-                          maxLength={500}
-                        />
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Alimentos que No le Gustan</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Alimentos_No_Gustan"
-                          rows={2}
-                          value={hcForm.Alimentos_No_Gustan}
-                          onChange={handleHcChange}
-                          placeholder="Alimentos que no consume..."
-                          maxLength={500}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
                         <label className="input__label">Intolerancias Alimentarias</label>
                         <textarea
                           className="form-control input-style"
@@ -554,101 +345,7 @@ const ExpedientePaciente: React.FC = () => {
           </div>
         )}
 
-        {/* ══ TAB 2: EVALUACIÓN CUANTITATIVA ══ */}
-        {activeTab === 'ec' && (
-          <div className="tab-pane fade show active">
-            {loadingEC ? (
-              <div className="text-center p-5"><i className="fa fa-spinner fa-spin fa-2x"></i></div>
-            ) : (
-              <form onSubmit={handleEcSubmit}>
-                <div className="card card_border py-2 mb-4">
-                  <div className="cards__heading">
-                    <h3>Evaluación Cuantitativa</h3>
-                  </div>
-                  <div className="card-body">
-                    <p className="text-muted mb-4">Registre el consumo habitual del paciente por tiempo de comida.</p>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Desayuno</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Desayuno"
-                          rows={3}
-                          value={ecForm.Desayuno}
-                          onChange={handleEcChange}
-                          placeholder="Describe lo que consume habitualmente en el desayuno..."
-                          maxLength={1000}
-                        />
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Merienda AM</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Merienda AM"
-                          rows={3}
-                          value={ecForm['Merienda AM']}
-                          onChange={handleEcChange}
-                          placeholder="Describe lo que consume en la merienda de la mañana..."
-                          maxLength={1000}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Almuerzo</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Almuerzo"
-                          rows={3}
-                          value={ecForm.Almuerzo}
-                          onChange={handleEcChange}
-                          placeholder="Describe lo que consume habitualmente en el almuerzo..."
-                          maxLength={1000}
-                        />
-                      </div>
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Merienda PM</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Merienda PM"
-                          rows={3}
-                          value={ecForm['Merienda PM']}
-                          onChange={handleEcChange}
-                          placeholder="Describe lo que consume en la merienda de la tarde..."
-                          maxLength={1000}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group col-md-6">
-                        <label className="input__label">Cena</label>
-                        <textarea
-                          className="form-control input-style"
-                          name="Cena"
-                          rows={3}
-                          value={ecForm.Cena}
-                          onChange={handleEcChange}
-                          placeholder="Describe lo que consume habitualmente en la cena..."
-                          maxLength={1000}
-                        />
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary btn-style mt-3" disabled={isSaving}>
-                      <i className={`fa ${isSaving ? 'fa-spinner fa-spin' : 'fa-save'}`} />
-                      {isSaving ? ' Guardando...' : ' Guardar Evaluación'}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* ══ TAB 3: ANÁLISIS BIOQUÍMICO ══ */}
+        {/* ══ TAB 2: ANÁLISIS BIOQUÍMICO ══ */}
         {activeTab === 'ab' && (
           <div className="tab-pane fade show active">
             {/* Historial */}

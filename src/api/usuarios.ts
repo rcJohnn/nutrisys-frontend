@@ -59,6 +59,18 @@ export const updateUsuario = async (id: number, data: Partial<Usuario>) => {
 };
 
 export const deleteUsuario = async (id: number, force: boolean = false) => {
-  const response = await apiClient.delete(`/Usuarios/${id}?force=${force}`);
-  return response.data;
+  const idUsuarioGlobal = Number(localStorage.getItem('userId') || '0');
+  try {
+    const response = await apiClient.delete(`/Usuarios/${id}?idUsuarioGlobal=${idUsuarioGlobal}&forzarEliminacion=${force}`);
+    return response.data;
+  } catch (error: any) {
+    // Re-throw con la data correcta para que el caller pueda acceder error.response.data
+    if (error.response) {
+      throw error;
+    }
+    // Error de red u otro
+    const err = new Error('Error de red');
+    (err as any).response = { data: error.message || 'Error desconocido' };
+    throw err;
+  }
 };

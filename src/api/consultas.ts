@@ -114,7 +114,7 @@ export interface ClinicaConsulta {
   id: number;
   nombre: string;
   direccion: string;
-  logo: string;
+  Logo_Url: string;
   Latitud?: number;
   Longitud?: number;
 }

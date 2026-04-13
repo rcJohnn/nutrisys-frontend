@@ -64,16 +64,33 @@ const Usuarios: React.FC = () => {
         await deleteMutation.mutateAsync({ id, force: false });
         alert('Usuario eliminado correctamente');
       } catch (error: any) {
-        if (error.response?.data?.error?.includes('consultas médicas')) {
+        // Extraer mensaje de error de múltiples fuentes posibles
+        let errorMsg = '';
+        if (error.response?.data?.error) {
+          errorMsg = error.response.data.error;
+        } else if (error.response?.data?.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.response?.data) {
+          errorMsg = JSON.stringify(error.response.data);
+        } else if (error.message) {
+          errorMsg = error.message;
+        } else if (typeof error === 'string') {
+          errorMsg = error;
+        }
+        
+        console.log('Delete error:', error, 'msg:', errorMsg);
+        
+        // Verificar si es error de consultas asociadas
+        if (errorMsg.toLowerCase().includes('consultas') && errorMsg.toLowerCase().includes('asociad')) {
           const forceDelete = window.confirm(
-            'Este usuario tiene consultas médicas asociadas. ¿Desea eliminarlo de todas formas?'
+            'Este usuario tiene consultas asociadas. ¿Desea eliminarlo de todas formas?'
           );
           if (forceDelete) {
             await deleteMutation.mutateAsync({ id, force: true });
             alert('Usuario eliminado correctamente');
           }
         } else {
-          alert('Error al eliminar usuario');
+          alert('Error al eliminar usuario' + (errorMsg ? ': ' + errorMsg : ''));
         }
       }
     }

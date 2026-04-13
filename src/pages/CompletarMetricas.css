@@ -570,6 +570,37 @@
 .cm-antrop-label { font-size: 11px; color: var(--ns-slate-500); }
 .cm-antrop-val { font-size: 15px; font-weight: 600; color: var(--ev-primary); }
 
+/* ── Antropometría secciones separadas ── */
+.cm-antrop-mediciones {
+  padding: 12px 0;
+}
+
+.cm-antrop-estimaciones {
+  border-top: 2px solid var(--ev-outline-variant);
+  padding: 16px 0 8px;
+  margin-top: 16px;
+}
+
+.cm-antrop-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ev-on-surface);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cm-antrop-title i {
+  color: var(--ev-primary);
+}
+
+.cm-section-desc {
+  font-size: 13px;
+  color: var(--ns-slate-500);
+  margin: 0 0 12px;
+}
+
 /* ═══════════════════════════════════════════
    CALCULADORA NUTRICIONAL (panel fijo inferior)
    ═══════════════════════════════════════════ */
@@ -716,6 +747,13 @@
   width: 60px !important;
   text-align: center;
   padding: 4px 6px !important;
+}
+.cm-dist-pct {
+  text-align: center;
+  color: var(--ev-primary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
 }
 .cm-dist-actions {
   display: flex; gap: 10px; flex-wrap: wrap;

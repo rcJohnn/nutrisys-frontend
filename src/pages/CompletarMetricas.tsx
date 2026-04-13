@@ -9,13 +9,17 @@ import {
   asignarPadecimiento, eliminarPadecimiento,
 } from '../api/padecimientos';
 import {
-  completarMetricas as completarMetricasApi, getHistoriaClinica, saveHistoriaClinica,
+  completarMetricas as completarMetricasApi,
+  getHistoriaClinica, updateHistoriaClinica,
+  getHistoriaClinicaHistorial, saveHistoriaClinicaHistorial,
   getEvaluacionCuantitativa, saveEvaluacionCuantitativa,
   getAnalisisBioquimico, saveAnalisisBioquimico,
   getPliegues, savePliegue, deletePliegue,
   calcularAntropometria, getAntropometriaConsulta,
   saveDistribucionMacros,
-  type HistoriaClinicaData, type AnalisisBioquimicoData,
+  TIPOS_PLIEGUES,
+  type HistoriaClinicaData, type HistoriaClinicaHistorialData,
+  type AnalisisBioquimicoData,
   type PliegueData, type DistribucionMacrosPayload,
 } from '../api/completarMetricas';
 import './CompletarMetricas.css';
@@ -33,11 +37,14 @@ interface MetricasForm {
 }
 
 interface HistoriaForm {
-  objetivos: string; calidadSueno: string; funcionIntestinal: string;
+  // Historia Clinica principal (estable por paciente)
   fuma: boolean; alcohol: boolean; frecuenciaAlcohol: string;
-  actividadFisica: string; medicamentos: string; cirugiasRecientes: string;
-  embarazo: boolean; lactancia: boolean; alimentosFavoritos: string;
-  alimentosNoGustan: string; intolerancias: string; alergias: string; ingestaAgua: string;
+  embarazo: boolean; lactancia: boolean;
+  intolerancias: string; alergias: string;
+  // Historia Clinica Historial (variable por consulta)
+  objetivos: string; calidadSueno: string; funcionIntestinal: string;
+  actividadFisica: string; medicamentos: string;
+  alimentosFavoritos: string; alimentosNoGustan: string; ingestaAgua: string;
 }
 
 interface EvaluacionForm {
@@ -317,10 +324,11 @@ const GEB_DESCRIPTIONS: Record<string, string> = {
 };
 
 const INIT_HISTORIA: HistoriaForm = {
+  fuma: false, alcohol: false, frecuenciaAlcohol: '',
+  embarazo: false, lactancia: false, intolerancias: '', alergias: '',
   objetivos: '', calidadSueno: 'Buena', funcionIntestinal: 'Normal',
-  fuma: false, alcohol: false, frecuenciaAlcohol: '', actividadFisica: '',
-  medicamentos: '', cirugiasRecientes: '', embarazo: false, lactancia: false,
-  alimentosFavoritos: '', alimentosNoGustan: '', intolerancias: '', alergias: '', ingestaAgua: '',
+  actividadFisica: '', medicamentos: '',
+  alimentosFavoritos: '', alimentosNoGustan: '', ingestaAgua: '',
 };
 
 const INIT_EVALUACION: EvaluacionForm = {
@@ -384,7 +392,6 @@ const CompletarMetricas: React.FC = () => {
   // ── Estado de formularios ────────────────────────────────────────────────
   const [metricas, setMetricas] = useState<MetricasForm>(INIT_METRICAS);
   const [historia, setHistoria] = useState<HistoriaForm>(INIT_HISTORIA);
-  const [historiaExiste, setHistoriaExiste] = useState(false);
   const [evaluacion, setEvaluacion] = useState<EvaluacionForm>(INIT_EVALUACION);
   const [analisis, setAnalisis] = useState<AnalisisForm>(INIT_ANALISIS);
 
@@ -489,32 +496,33 @@ const CompletarMetricas: React.FC = () => {
   // ── Carga lazy por tab ───────────────────────────────────────────────────
   const cargarHistoria = useCallback(async () => {
     if (historiaCargada || !consulta?.Id_Usuario) return;
-    const h = await getHistoriaClinica(consulta.Id_Usuario);
     setHistoriaCargada(true);
-    if (h) {
-      setHistoriaExiste(true);
-      setHistoria({
-        objetivos: h.Objetivos_Clinicos ?? '',
-        calidadSueno: h.Calidad_Sueno ?? 'Buena',
-        funcionIntestinal: h.Funcion_Intestinal ?? 'Normal',
-        fuma: h.Fuma ?? false, alcohol: h.Consume_Alcohol ?? false,
-        frecuenciaAlcohol: h.Frecuencia_Alcohol ?? '',
-        actividadFisica: h.Actividad_Fisica ?? '',
-        medicamentos: h.Medicamentos ?? '',
-        cirugiasRecientes: h.Cirugias_Recientes ?? '',
-        embarazo: h.Embarazo ?? false, lactancia: h.Lactancia ?? false,
-        alimentosFavoritos: h.Alimentos_Favoritos ?? '',
-        alimentosNoGustan: h.Alimentos_No_Gustan ?? '',
-        intolerancias: h.Intolerancias ?? '',
-        alergias: h.Alergias_Alimentarias ?? '',
-        ingestaAgua: h.Ingesta_Agua_Diaria ?? '',
-      });
-    }
-  }, [historiaCargada, consulta?.Id_Usuario]);
+    const [hc, hist] = await Promise.all([
+      getHistoriaClinica(consulta.Id_Usuario),
+      getHistoriaClinicaHistorial(consultaId),
+    ]);
+    setHistoria({
+      fuma: hc?.Fuma ?? false,
+      alcohol: hc?.Consume_Alcohol ?? false,
+      frecuenciaAlcohol: hc?.Frecuencia_Alcohol ?? '',
+      embarazo: hc?.Embarazo ?? false,
+      lactancia: hc?.Lactancia ?? false,
+      intolerancias: hc?.Intolerancias ?? '',
+      alergias: hc?.Alergias_Alimentarias ?? '',
+      objetivos: hist?.Objetivos_Clinicos ?? '',
+      calidadSueno: hist?.Calidad_Sueno ?? 'Buena',
+      funcionIntestinal: hist?.Funcion_Intestinal ?? 'Normal',
+      actividadFisica: hist?.Actividad_Fisica ?? '',
+      medicamentos: hist?.Medicamentos ?? '',
+      alimentosFavoritos: hist?.Alimentos_Favoritos ?? '',
+      alimentosNoGustan: hist?.Alimentos_No_Gustan ?? '',
+      ingestaAgua: hist?.Ingesta_Agua_Diaria ?? '',
+    });
+  }, [historiaCargada, consulta?.Id_Usuario, consultaId]);
 
   const cargarEvaluacion = useCallback(async () => {
-    if (evaluacionCargada || !consulta?.Id_Usuario) return;
-    const items = await getEvaluacionCuantitativa(consulta.Id_Usuario);
+    if (evaluacionCargada || !consultaId) return;
+    const items = await getEvaluacionCuantitativa(consultaId);
     setEvaluacionCargada(true);
     const map: Record<string, string> = {};
     items.forEach(i => { map[i.Tiempo_Comida] = i.Consumo_Usual; });
@@ -525,7 +533,7 @@ const CompletarMetricas: React.FC = () => {
       meriendaPM: map['Merienda PM'] ?? '',
       cena: map['Cena'] ?? '',
     });
-  }, [evaluacionCargada, consulta?.Id_Usuario]);
+  }, [evaluacionCargada, consultaId]);
 
   const cargarAnalisis = useCallback(async () => {
     if (analisisCargado || !consulta?.Id_Usuario) return;
@@ -579,19 +587,21 @@ const CompletarMetricas: React.FC = () => {
 
   // ── Calculadora: actualizar GEB/REE al cambiar datos ─────────────────────
   const recalcularGEB = useCallback(() => {
-    const peso = parseFloat(metricas.peso);
+    const pesoActual = parseFloat(metricas.peso);
     const estatura = parseFloat(metricas.estatura);
-    if (!peso || !estatura || !usuario) return;
+    if (!pesoActual || !estatura || !usuario) return;
+    // GEB usa peso ideal si está calculado, sino cae a peso actual
+    const peso = calc.pesoIdeal ?? pesoActual;
     const edad = calcEdad(usuario.FechaNacimiento);
     const sexo = usuario.Sexo;
     const mlg = parseFloat(metricas.grasaPct) > 0
-      ? peso * (1 - parseFloat(metricas.grasaPct) / 100)
+      ? pesoActual * (1 - parseFloat(metricas.grasaPct) / 100)
       : undefined;
     const geb = calcGEB(calc.formulaGEB, peso, estatura, edad, sexo, mlg);
     const factAct = parseFloat(calc.factorActividad) || 1.2;
     const ree = geb * factAct;
     setCalc(c => ({ ...c, geb, reeCalculado: ree, reeEditable: String(Math.round(ree)) }));
-  }, [metricas.peso, metricas.estatura, metricas.grasaPct, usuario, calc.formulaGEB, calc.factorActividad]);
+  }, [metricas.peso, metricas.estatura, metricas.grasaPct, usuario, calc.formulaGEB, calc.factorActividad, calc.pesoIdeal]);
 
   const recalcularPesoIdeal = useCallback(() => {
     const estatura = parseFloat(metricas.estatura);
@@ -682,29 +692,33 @@ const CompletarMetricas: React.FC = () => {
   });
 
   const mutGuardarHistoria = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!consulta?.Id_Usuario) throw new Error('Sin ID de usuario');
-      const payload: HistoriaClinicaData = {
-        Id_Usuario: consulta.Id_Usuario,
+      // HC principal: datos estables del paciente (UPSERT por idUsuario)
+      await updateHistoriaClinica(consulta.Id_Usuario, {
+        Fuma: historia.fuma,
+        Consume_Alcohol: historia.alcohol,
+        Frecuencia_Alcohol: historia.frecuenciaAlcohol,
+        Embarazo: historia.embarazo,
+        Lactancia: historia.lactancia,
+        Intolerancias: historia.intolerancias,
+        Alergias_Alimentarias: historia.alergias,
+      });
+      // HC Historial: datos variables de esta consulta (INSERT)
+      const historialPayload: HistoriaClinicaHistorialData = {
+        Id_Consulta: consultaId,
         Objetivos_Clinicos: historia.objetivos,
         Calidad_Sueno: historia.calidadSueno,
         Funcion_Intestinal: historia.funcionIntestinal,
-        Fuma: historia.fuma, Consume_Alcohol: historia.alcohol,
-        Frecuencia_Alcohol: historia.frecuenciaAlcohol,
         Actividad_Fisica: historia.actividadFisica,
         Medicamentos: historia.medicamentos,
-        Cirugias_Recientes: historia.cirugiasRecientes,
-        Embarazo: historia.embarazo, Lactancia: historia.lactancia,
         Alimentos_Favoritos: historia.alimentosFavoritos,
         Alimentos_No_Gustan: historia.alimentosNoGustan,
-        Intolerancias: historia.intolerancias,
-        Alergias_Alimentarias: historia.alergias,
         Ingesta_Agua_Diaria: historia.ingestaAgua,
       };
-      return saveHistoriaClinica(payload, historiaExiste);
+      return saveHistoriaClinicaHistorial(historialPayload);
     },
     onSuccess: () => {
-      setHistoriaExiste(true);
       alert('Historia clínica guardada correctamente');
       handleTabChange('evaluacion');
     },
@@ -713,13 +727,13 @@ const CompletarMetricas: React.FC = () => {
 
   const mutGuardarEvaluacion = useMutation({
     mutationFn: () => {
-      if (!consulta?.Id_Usuario) throw new Error('Sin ID de usuario');
+      if (!consultaId) throw new Error('Sin ID de consulta');
       const items = TIEMPOS.map((t, i) => ({
         Tiempo_Comida: t,
         Consumo_Usual: [evaluacion.desayuno, evaluacion.meriendaAM, evaluacion.almuerzo,
           evaluacion.meriendaPM, evaluacion.cena][i],
       })).filter(x => x.Consumo_Usual.trim());
-      return saveEvaluacionCuantitativa(consulta.Id_Usuario, items);
+      return saveEvaluacionCuantitativa(consultaId, items);
     },
     onSuccess: () => {
       alert('Evaluación cuantitativa guardada correctamente');
@@ -754,8 +768,8 @@ const CompletarMetricas: React.FC = () => {
   });
 
   const mutGuardarPliegue = useMutation({
-    mutationFn: ({ tipo, valor }: { tipo: string; valor: number }) =>
-      savePliegue({ Id_Consulta: consultaId, Tipo_Pliegue: tipo, Valor_mm: valor }),
+    mutationFn: ({ idTipo, valor }: { idTipo: number; valor: number }) =>
+      savePliegue(consultaId, idTipo, valor),
     onSuccess: () => getPliegues(consultaId).then(setPlieguesData),
     onError: () => alert('Error al guardar pliegue'),
   });
@@ -854,7 +868,7 @@ const CompletarMetricas: React.FC = () => {
         try {
           const clinicas = await getClinicasMedico(consulta.Id_Medico);
           const clinica = clinicas.find(c => c.id === consulta.Id_Clinica);
-          if (clinica?.logo) logoClinicaUrl = clinica.logo;
+          if (clinica?.Logo_Url) logoClinicaUrl = clinica.Logo_Url;
         } catch { /* logo de clínica es opcional */ }
       }
       generarPDFNutricional({
@@ -924,10 +938,8 @@ const CompletarMetricas: React.FC = () => {
   const setC = (field: keyof CalculadoraState, val: string | number | null) =>
     setCalc(p => ({ ...p, [field]: val }));
 
-  const PLIEGUES_TIPOS = [
-    'Tricipital', 'Bicipital', 'Subescapular', 'Suprailiaco',
-    'Abdominal', 'Muslo_Anterior', 'Pierna_Medial', 'Pectoral', 'Axilar_Medio',
-  ];
+  // Usar los tipos de la BD (importados desde api/completarMetricas)
+  const PLIEGUES_TIPOS = TIPOS_PLIEGUES;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -1039,7 +1051,7 @@ const CompletarMetricas: React.FC = () => {
                   onChange={e => setM('masaOsea', e.target.value)} placeholder="g" />
               </div>
               <div className="cm-field">
-                <label>Agua Corporal (%)</label>
+                <label>Agua Corporal (% o Gramos)</label>
                 <input type="number" step="0.1" value={metricas.aguaCorporal}
                   onChange={e => setM('aguaCorporal', e.target.value)} placeholder="%" />
               </div>
@@ -1049,7 +1061,7 @@ const CompletarMetricas: React.FC = () => {
                   onChange={e => setM('edadMetabolica', e.target.value)} />
               </div>
               <div className="cm-field">
-                <label>Grasa Visceral (1-59)</label>
+                <label>Grasa Visceral (1-10)</label>
                 <input type="number" min="1" max="59" value={metricas.grasaVisceral}
                   onChange={e => setM('grasaVisceral', e.target.value)} />
               </div>
@@ -1104,20 +1116,20 @@ const CompletarMetricas: React.FC = () => {
             {showPliegues && (
               <div className="cm-collapsible-body">
                 <div className="cm-grid-3">
-                  {PLIEGUES_TIPOS.map(tipo => {
-                    const saved = plieguesData.find(p => p.Tipo_Pliegue === tipo);
+                  {PLIEGUES_TIPOS.map(({ id: idTipo, nombre }) => {
+                    const saved = plieguesData.find(p => p.Tipo_Pliegue === nombre);
                     return (
-                      <div key={tipo} className="cm-pliegue-row">
-                        <label>{tipo.replace(/_/g, ' ')}</label>
+                      <div key={idTipo} className="cm-pliegue-row">
+                        <label>{nombre}</label>
                         <div className="cm-pliegue-input-row">
                           <input type="number" step="0.1" placeholder="mm"
-                            value={valoresPliegues[tipo] ?? ''}
-                            onChange={e => setValoresPliegues(v => ({ ...v, [tipo]: e.target.value }))}
+                            value={valoresPliegues[nombre] ?? ''}
+                            onChange={e => setValoresPliegues(v => ({ ...v, [nombre]: e.target.value }))}
                           />
                           <button className="cm-btn-sm cm-btn-save"
                             onClick={() => {
-                              const v = parseFloat(valoresPliegues[tipo] ?? '');
-                              if (!isNaN(v)) mutGuardarPliegue.mutate({ tipo, valor: v });
+                              const v = parseFloat(valoresPliegues[nombre] ?? '');
+                              if (!isNaN(v)) mutGuardarPliegue.mutate({ idTipo, valor: v });
                             }}
                           >
                             <i className="fa fa-save" />
@@ -1146,7 +1158,7 @@ const CompletarMetricas: React.FC = () => {
             )}
           </div>
 
-          {/* Panel Antropometría */}
+          {/* Panel Antropometría - Sección de Mediciones */}
           <div className="cm-collapsible">
             <button className="cm-collapsible-btn" onClick={() => setShowAntrop(v => !v)}>
               <i className={`fa ${showAntrop ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
@@ -1154,53 +1166,61 @@ const CompletarMetricas: React.FC = () => {
             </button>
             {showAntrop && (
               <div className="cm-collapsible-body">
-                <div className="cm-grid-3">
-                  <div className="cm-field">
-                    <label>Circ. de Brazo (cm)</label>
-                    <input type="number" step="0.1" value={antropForm.pb}
-                      onChange={e => setAntropForm(a => ({ ...a, pb: e.target.value }))} />
+                <div className="cm-antrop-mediciones">
+                  <p className="cm-section-desc">Ingrese las mediciones para calcular la composición corporal estimada.</p>
+                  <div className="cm-grid-3">
+                    <div className="cm-field">
+                      <label>Circ. de Brazo (cm)</label>
+                      <input type="number" step="0.1" value={antropForm.pb}
+                        onChange={e => setAntropForm(a => ({ ...a, pb: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label>Circ. Pantorrilla (cm)</label>
+                      <input type="number" step="0.1" value={antropForm.pantorrilla}
+                        onChange={e => setAntropForm(a => ({ ...a, pantorrilla: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label>Altura de Rodilla (cm)</label>
+                      <input type="number" step="0.1" value={antropForm.ar}
+                        onChange={e => setAntropForm(a => ({ ...a, ar: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label>Etnia</label>
+                      <select value={antropForm.etnia}
+                        onChange={e => setAntropForm(a => ({ ...a, etnia: e.target.value }))}>
+                        <option value="B">Blanca / Mestiza</option>
+                        <option value="N">Negra / Afrodescendiente</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="cm-field">
-                    <label>Circ. Pantorrilla (cm)</label>
-                    <input type="number" step="0.1" value={antropForm.pantorrilla}
-                      onChange={e => setAntropForm(a => ({ ...a, pantorrilla: e.target.value }))} />
-                  </div>
-                  <div className="cm-field">
-                    <label>Altura de Rodilla (cm)</label>
-                    <input type="number" step="0.1" value={antropForm.ar}
-                      onChange={e => setAntropForm(a => ({ ...a, ar: e.target.value }))} />
-                  </div>
-                  <div className="cm-field">
-                    <label>Etnia</label>
-                    <select value={antropForm.etnia}
-                      onChange={e => setAntropForm(a => ({ ...a, etnia: e.target.value }))}>
-                      <option value="B">Blanca / Mestiza</option>
-                      <option value="N">Negra / Afrodescendiente</option>
-                    </select>
-                  </div>
+                  <button className="cm-btn cm-btn-primary mt-2"
+                    onClick={() => mutAntropometria.mutate()}
+                    disabled={mutAntropometria.isPending}
+                  >
+                    <i className="fa fa-calculator" /> Calcular y Guardar
+                  </button>
                 </div>
-                <button className="cm-btn cm-btn-primary mt-2"
-                  onClick={() => mutAntropometria.mutate()}
-                  disabled={mutAntropometria.isPending}
-                >
-                  <i className="fa fa-calculator" /> Calcular y Guardar
-                </button>
+
+                {/* Sección de Estimaciones (resultados) */}
                 {antropResult && (
-                  <div className="cm-antrop-results">
-                    <div className="cm-antrop-grid">
-                      {[
-                        ['ATB (cm²)', antropResult.atb.toFixed(2)],
-                        ['CMB (cm)', antropResult.cmb.toFixed(2)],
-                        ['AMB (cm²)', antropResult.amb.toFixed(2)],
-                        ['AGB (cm²)', antropResult.agb.toFixed(2)],
-                        ['Peso Estimado', `${antropResult.pesoEst.toFixed(1)} kg`],
-                        ['Talla Estimada', `${antropResult.tallaEst.toFixed(1)} cm`],
-                      ].map(([label, val]) => (
-                        <div key={label} className="cm-antrop-item">
-                          <span className="cm-antrop-label">{label}</span>
-                          <span className="cm-antrop-val">{val}</span>
-                        </div>
-                      ))}
+                  <div className="cm-antrop-estimaciones">
+                    <h4 className="cm-antrop-title"><i className="fa fa-line-chart" /> Estimaciones Calculadas</h4>
+                    <div className="cm-antrop-results">
+                      <div className="cm-antrop-grid">
+                        {[
+                          ['ATB (cm²)', antropResult.atb.toFixed(2)],
+                          ['CMB (cm)', antropResult.cmb.toFixed(2)],
+                          ['AMB (cm²)', antropResult.amb.toFixed(2)],
+                          ['AGB (cm²)', antropResult.agb.toFixed(2)],
+                          ['Peso Estimado', `${antropResult.pesoEst.toFixed(1)} kg`],
+                          ['Talla Estimada', `${antropResult.tallaEst.toFixed(1)} cm`],
+                        ].map(([label, val]) => (
+                          <div key={label} className="cm-antrop-item">
+                            <span className="cm-antrop-label">{label}</span>
+                            <span className="cm-antrop-val">{val}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1212,10 +1232,10 @@ const CompletarMetricas: React.FC = () => {
           <div className="cm-card">
             <h4 className="cm-card-title"><i className="fa fa-pencil-square-o" /> Observaciones y Recomendaciones</h4>
             <div className="cm-field">
-              <label>Observaciones Clínicas</label>
+              <label>Observaciones</label>
               <textarea rows={3} maxLength={2000} value={metricas.observaciones}
                 onChange={e => setM('observaciones', e.target.value)}
-                placeholder="Observaciones del médico..." />
+                placeholder="Observaciones del nutricionista..." />
             </div>
             <div className="cm-field mt-2">
               <label>Recomendaciones</label>
@@ -1322,12 +1342,6 @@ const CompletarMetricas: React.FC = () => {
                   onChange={e => setH('medicamentos', e.target.value)}
                   placeholder="Medicamentos actuales" />
               </div>
-            </div>
-            <div className="cm-field mt-2">
-              <label>Cirugías Recientes</label>
-              <textarea rows={2} value={historia.cirugiasRecientes}
-                onChange={e => setH('cirugiasRecientes', e.target.value)}
-                placeholder="Descripción de cirugías recientes..." />
             </div>
           </div>
 
@@ -1857,7 +1871,8 @@ const CompletarMetricas: React.FC = () => {
                     <tr>
                       <td><strong>Total</strong></td>
                       <td><strong>{Math.round(ree)}</strong></td>
-                      <td colSpan={2}></td>
+                      <td><strong>{(gramsCHO + gramsProt + gramsGrasa).toFixed(1)}</strong></td>
+                      <td><strong>{pesoRef > 0 ? ((gramsCHO + gramsProt + gramsGrasa) / pesoRef).toFixed(2) : '—'}</strong></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1894,33 +1909,42 @@ const CompletarMetricas: React.FC = () => {
                         <tr>
                           <th>Tiempo</th><th>CHO (g)</th><th>Prot (g)</th>
                           <th>Grasa (g)</th><th>Fibra (g)</th>
+                          <th>% CHO</th><th>% Prot</th><th>% Grasa</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {tiemposKeys.map((k, i) => (
-                          <tr key={TIEMPOS[i]}>
-                            <td>{EMOJIS_TIEMPOS[i]} {TIEMPOS[i]}</td>
-                            {(['cho', 'prot', 'grasa', 'fibra'] as const).map(mac => (
-                              <td key={mac}>
-                                <input
-                                  type="number" step="0.1" className="cm-dist-input"
-                                  value={calc[k[mac]] as string}
-                                  onChange={e => setC(k[mac], e.target.value)}
-                                  onKeyDown={e => {
-                                    const allInputs = document.querySelectorAll<HTMLInputElement>('.cm-dist-input');
-                                    const idx = Array.from(allInputs).indexOf(e.currentTarget);
-                                    if (e.key === 'ArrowDown' && idx + 4 < allInputs.length) {
-                                      e.preventDefault(); allInputs[idx + 4].focus();
-                                    }
-                                    if (e.key === 'ArrowUp' && idx - 4 >= 0) {
-                                      e.preventDefault(); allInputs[idx - 4].focus();
-                                    }
-                                  }}
-                                />
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
+                        {tiemposKeys.map((k, i) => {
+                          const rowCHO = parseFloat(calc[k.cho] as string) || 0;
+                          const rowProt = parseFloat(calc[k.prot] as string) || 0;
+                          const rowGrasa = parseFloat(calc[k.grasa] as string) || 0;
+                          return (
+                            <tr key={TIEMPOS[i]}>
+                              <td>{EMOJIS_TIEMPOS[i]} {TIEMPOS[i]}</td>
+                              {(['cho', 'prot', 'grasa', 'fibra'] as const).map(mac => (
+                                <td key={mac}>
+                                  <input
+                                    type="number" step="0.1" className="cm-dist-input"
+                                    value={calc[k[mac]] as string}
+                                    onChange={e => setC(k[mac], e.target.value)}
+                                    onKeyDown={e => {
+                                      const allInputs = document.querySelectorAll<HTMLInputElement>('.cm-dist-input');
+                                      const idx = Array.from(allInputs).indexOf(e.currentTarget);
+                                      if (e.key === 'ArrowDown' && idx + 4 < allInputs.length) {
+                                        e.preventDefault(); allInputs[idx + 4].focus();
+                                      }
+                                      if (e.key === 'ArrowUp' && idx - 4 >= 0) {
+                                        e.preventDefault(); allInputs[idx - 4].focus();
+                                      }
+                                    }}
+                                  />
+                                </td>
+                              ))}
+                              <td className="cm-dist-pct">{gramsCHO > 0 ? ((rowCHO / gramsCHO) * 100).toFixed(1) : '0.0'}%</td>
+                              <td className="cm-dist-pct">{gramsProt > 0 ? ((rowProt / gramsProt) * 100).toFixed(1) : '0.0'}%</td>
+                              <td className="cm-dist-pct">{gramsGrasa > 0 ? ((rowGrasa / gramsGrasa) * 100).toFixed(1) : '0.0'}%</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                       <tfoot>
                         <tr>
@@ -1945,6 +1969,9 @@ const CompletarMetricas: React.FC = () => {
                               </td>
                             );
                           })}
+                          <td className="cm-dist-pct"><strong>{gramsCHO > 0 ? ((totalDistCHO / gramsCHO) * 100).toFixed(1) : '0.0'}%</strong></td>
+                          <td className="cm-dist-pct"><strong>{gramsProt > 0 ? ((totalDistProt / gramsProt) * 100).toFixed(1) : '0.0'}%</strong></td>
+                          <td className="cm-dist-pct"><strong>{gramsGrasa > 0 ? ((totalDistGrasa / gramsGrasa) * 100).toFixed(1) : '0.0'}%</strong></td>
                         </tr>
                       </tfoot>
                     </table>

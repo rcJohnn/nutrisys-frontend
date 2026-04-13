@@ -130,6 +130,36 @@
   margin-bottom: 0.5rem;
 }
 
+.mc-clinica-logo-img {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ns-radius-md);
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.mc-clinica-confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 108, 73, 0.9);
+  color: #fff;
+  border-radius: var(--ns-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  animation: ns-fade-in 0.2s ease;
+}
+
+.mc-clinica-confirm-overlay i {
+  font-size: 1.2rem;
+}
+
 .mc-clinica-nombre {
   font-size: 0.84rem;
   font-weight: 700;

@@ -249,7 +249,7 @@ const DetalleConsulta: React.FC = () => {
               <div className="dc-metric-box">
                 <div className="dc-metric-icon dc-icon-indigo"><i className="fa fa-tint"></i></div>
                 <div className="dc-metric-val">{agua}</div>
-                <div className="dc-metric-unit">%</div>
+                <div className="dc-metric-unit">% o g</div>
                 <div className="dc-metric-lbl">Agua Corporal</div>
               </div>
             )}
