@@ -1,0 +1,488 @@
+/* ═══════════════════════════════════════
+   MantenimientoConsultas
+═══════════════════════════════════════ */
+
+.mc-page {
+  animation: ns-page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Patient search / badge ── */
+.mc-search-wrapper {
+  position: relative;
+}
+
+.mc-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--ev-surface-lowest);
+  border: 1px solid var(--ev-outline-variant);
+  border-top: none;
+  border-radius: 0 0 var(--ns-radius-md) var(--ns-radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.mc-search-item {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.84rem;
+  cursor: pointer;
+  color: var(--ev-on-surface);
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mc-search-item:hover { background: var(--ev-surface-low); }
+
+.mc-search-item i { color: var(--ev-primary); font-size: 0.9rem; }
+
+.mc-paciente-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ev-primary);
+  color: #fff;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--ns-radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.mc-paciente-badge button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  opacity: 0.7;
+  transition: opacity 0.12s;
+}
+
+.mc-paciente-badge button:hover { opacity: 1; }
+
+/* ── Container / Header ── */
+.mc-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.mc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.mc-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ev-on-surface);
+  margin: 0;
+}
+
+.mc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ev-surface-low);
+  color: var(--ev-on-surface);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.mc-back-btn:hover {
+  background: var(--ev-surface);
+  border-color: var(--ev-outline);
+}
+
+/* ── Form / Card ── */
+.mc-form {
+  margin-top: 1rem;
+}
+
+.mc-card {
+  background: var(--ev-surface-lowest);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -0.75rem;
+}
+
+.form-group {
+  padding: 0 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.col-md-6 { flex: 0 0 50%; max-width: 50%; }
+.col-md-4 { flex: 0 0 33.333%; max-width: 33.333%; }
+.col-md-12 { flex: 0 0 100%; max-width: 100%; }
+
+.input__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ev-on-surface-variant);
+  margin-bottom: 0.4rem;
+}
+
+.input-style {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  background: var(--ev-surface-lowest);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-md);
+  color: var(--ev-on-surface);
+  transition: border-color 0.12s;
+}
+
+.input-style:focus {
+  outline: none;
+  border-color: var(--ev-primary);
+}
+
+/* ── Clinica grid ── */
+.mc-clinica-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.mc-clinica-item {
+  position: relative;
+  background: var(--ev-surface-low);
+  border: 2px solid transparent;
+  border-radius: var(--ns-radius-md);
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mc-clinica-item:hover {
+  background: var(--ev-surface);
+  border-color: var(--ev-outline);
+}
+
+.mc-clinica-item.selected {
+  border-color: var(--ev-primary);
+  background: var(--ev-primary-container);
+}
+
+.mc-clinica-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: var(--ns-radius-sm);
+  background: #fff;
+  padding: 4px;
+}
+
+.mc-clinica-info {
+  flex: 1;
+}
+
+.mc-clinica-name {
+  font-weight: 600;
+  color: var(--ev-on-surface);
+  margin-bottom: 0.2rem;
+}
+
+.mc-clinica-address {
+  font-size: 0.8rem;
+  color: var(--ev-on-surface-variant);
+}
+
+.mc-clinica-check {
+  opacity: 0;
+  color: var(--ev-primary);
+  font-size: 1.2rem;
+  transition: opacity 0.12s;
+}
+
+.mc-clinica-item.selected .mc-clinica-check {
+  opacity: 1;
+}
+
+/* ── Actions ── */
+.mc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ev-outline-variant);
+}
+
+.mc-btn-cancelar {
+  background: var(--ev-surface-low);
+  color: var(--ev-on-surface);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-md);
+  padding: 0.65rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.mc-btn-cancelar:hover {
+  background: var(--ev-surface);
+  border-color: var(--ev-outline);
+}
+
+.mc-btn-guardar {
+  background: var(--ev-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--ns-radius-md);
+  padding: 0.65rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mc-btn-guardar:hover { background: var(--ev-primary-dark); }
+.mc-btn-guardar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Self-schedule patient badge ── */
+.mc-self-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--ev-surface-low);
+  border-radius: var(--ns-radius-lg);
+  padding: 0.75rem 1rem;
+}
+
+.mc-self-badge i {
+  font-size: 1.5rem;
+  color: var(--ev-primary);
+}
+
+.mc-self-badge-name {
+  font-weight: 700;
+  color: var(--ev-on-surface);
+}
+
+.mc-self-badge-sub {
+  font-size: 0.78rem;
+  color: var(--ns-slate-500);
+}
+
+/* ── Sin médicos con autoagendamiento ── */
+.mc-sin-autoagenda {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--ns-info-bg);
+  border: 1px solid var(--ns-info-border);
+  border-radius: var(--ns-radius-md);
+  color: var(--ns-info-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.mc-sin-autoagenda i {
+  margin-top: 2px;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* ── Calendario de disponibilidad ── */
+.mc-fecha-hora-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mc-btn-ver-disponibilidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ev-secondary-container);
+  color: var(--ev-on-secondary-container);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  align-self: flex-start;
+}
+
+.mc-btn-ver-disponibilidad:hover {
+  background: var(--ev-secondary);
+  color: #fff;
+  border-color: var(--ev-secondary);
+}
+
+.mc-btn-ver-disponibilidad i {
+  font-size: 0.9rem;
+}
+
+.mc-calendario-container {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--ev-surface-lowest);
+  border: 1px solid var(--ev-outline-variant);
+  border-radius: var(--ns-radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.mc-calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--ev-outline-variant);
+}
+
+.mc-calendario-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ev-on-surface);
+}
+
+.mc-btn-cerrar-calendario {
+  background: none;
+  border: none;
+  color: var(--ev-on-surface-variant);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.mc-btn-cerrar-calendario:hover {
+  background: var(--ev-surface-low);
+  color: var(--ev-on-surface);
+}
+
+.mc-calendario-embedded {
+  max-width: 100% !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.mc-calendario-embedded .calendario-container {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+.mc-calendario-info {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--ev-surface-low);
+  border-radius: var(--ns-radius-md);
+  border: 1px solid var(--ev-outline-variant);
+}
+
+.mc-calendario-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ev-on-surface-variant);
+}
+
+.mc-calendario-info small {
+  font-size: 0.85rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mc-container {
+    padding: 1rem;
+  }
+  
+  .mc-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .mc-title {
+    font-size: 1.5rem;
+  }
+  
+  .form-row {
+    margin: 0;
+  }
+  
+  .col-md-6,
+  .col-md-4,
+  .col-md-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .mc-clinica-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mc-actions {
+    flex-direction: column;
+  }
+  
+  .mc-btn-cancelar,
+  .mc-btn-guardar {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mc-calendario-container {
+    padding: 1rem;
+  }
+  
+  .mc-calendario-embedded .calendario-container {
+    padding: 0.5rem !important;
+  }
+}
+
+/* ── Animaciones ── */
+@keyframes ns-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

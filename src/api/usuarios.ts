@@ -1,0 +1,76 @@
+import { apiClient } from './client';
+
+export interface Usuario {
+  Id_Usuario: number;
+  Nombre: string;
+  Prim_Apellido: string;
+  Seg_Apellido: string;
+  Cedula: string;
+  FechaNacimiento: string;
+  Sexo: string;
+  Telefono: string;
+  Correo: string;
+  Observaciones: string;
+  Estado: string;
+}
+
+export interface UsuarioFiltros {
+  correo?: string;
+  nombre?: string;
+  estado?: string;
+}
+
+/** El API a veces devuelve el arreglo envuelto (p. ej. objeto con clave de lista). */
+function unwrapUsuariosPayload(data: unknown): Usuario[] {
+  if (Array.isArray(data)) return data as Usuario[];
+  if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    for (const key of ['Data', 'Items', 'items', 'Result', 'result', 'Usuarios']) {
+      const v = o[key];
+      if (Array.isArray(v)) return v as Usuario[];
+    }
+  }
+  return [];
+}
+
+export const getUsuarios = async (filtros: UsuarioFiltros = {}) => {
+  const params = new URLSearchParams();
+  if (filtros.correo) params.append('correo', filtros.correo);
+  if (filtros.nombre) params.append('nombre', filtros.nombre);
+  if (filtros.estado) params.append('estado', filtros.estado);
+
+  const response = await apiClient.get(`/Usuarios?${params.toString()}`);
+  return unwrapUsuariosPayload(response.data);
+};
+
+export const getUsuarioById = async (id: number) => {
+  const response = await apiClient.get(`/Usuarios/${id}`);
+  return response.data;
+};
+
+export const createUsuario = async (data: Omit<Usuario, 'Id_Usuario'>) => {
+  const response = await apiClient.post('/Usuarios', data);
+  return response.data;
+};
+
+export const updateUsuario = async (id: number, data: Partial<Usuario>) => {
+  const response = await apiClient.put(`/Usuarios/${id}`, data);
+  return response.data;
+};
+
+export const deleteUsuario = async (id: number, force: boolean = false) => {
+  const idUsuarioGlobal = Number(localStorage.getItem('userId') || '0');
+  try {
+    const response = await apiClient.delete(`/Usuarios/${id}?idUsuarioGlobal=${idUsuarioGlobal}&forzarEliminacion=${force}`);
+    return response.data;
+  } catch (error: any) {
+    // Re-throw con la data correcta para que el caller pueda acceder error.response.data
+    if (error.response) {
+      throw error;
+    }
+    // Error de red u otro
+    const err = new Error('Error de red');
+    (err as any).response = { data: error.message || 'Error desconocido' };
+    throw err;
+  }
+};

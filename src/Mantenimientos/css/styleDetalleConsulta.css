@@ -1,0 +1,534 @@
+/* ═══════════════════════════════════════════════════
+   DETALLE CONSULTA — Design System NutriSys v4
+   Prefijo: dc-
+   ═══════════════════════════════════════════════════ */
+
+/* ── Variables (alineadas con DS v4) ───────────────── */
+:root {
+    --dc-surface:     var(--ev-surface);
+    --dc-card-bg:     var(--ev-surface-lowest);
+    --dc-border:      transparent;
+    --dc-text:        var(--ev-on-surface);
+    --dc-text-muted:  var(--ev-on-surface-variant);
+    --dc-radius:      10px;
+    --dc-shadow:      var(--ev-shadow-ambient);
+    --dc-transition:  200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ── Page Header ───────────────────────────────────── */
+.dc-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.dc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+}
+
+.dc-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 6px 14px;
+    background: rgba(0,108,73,0.08);
+    color: var(--ev-primary);
+    border-radius: 7px;
+    font-family: var(--ns-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--dc-transition), transform var(--dc-transition);
+    white-space: nowrap;
+}
+.dc-back-btn:hover {
+    background: rgba(0,108,73,0.14);
+    transform: translateY(-1px);
+}
+
+.dc-page-title {
+    font-family: var(--ns-font-heading);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--dc-text);
+    margin: 0;
+    line-height: 1.2;
+}
+.dc-page-sub {
+    font-family: var(--ns-font-body);
+    font-size: 11px;
+    color: var(--dc-text-muted);
+    margin: 2px 0 0;
+}
+
+/* ── Badge de Estado ───────────────────────────────── */
+.dc-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: var(--ns-font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+.dc-badge-completada  { background: var(--ev-secondary-container); color: var(--ev-on-secondary-container); }
+.dc-badge-pendiente   { background: var(--ns-amber-100); color: var(--ns-amber-700); }
+.dc-badge-cancelada   { background: var(--ns-danger-bg); color: var(--ns-danger-text); }
+.dc-badge-noasistio   { background: var(--ev-surface-container); color: var(--ev-on-surface-variant); }
+
+/* ── Loading ───────────────────────────────────────── */
+.dc-loading-wrap {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--dc-text-muted);
+    font-family: var(--ns-font-body);
+    font-size: 13px;
+}
+.dc-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2.5px solid var(--ev-secondary-container);
+    border-top-color: var(--ev-primary);
+    border-radius: 50%;
+    animation: dc-spin 0.7s linear infinite;
+    margin: 0 auto 1rem;
+}
+@keyframes dc-spin { to { transform: rotate(360deg); } }
+
+/* ── Layout ────────────────────────────────────────── */
+.dc-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.875rem;
+    margin-bottom: 0.875rem;
+}
+@media (max-width: 768px) {
+    .dc-row-2 { grid-template-columns: 1fr; }
+}
+.dc-card-full { margin-bottom: 0.875rem; }
+
+/* ── Cards ─────────────────────────────────────────── */
+.dc-card {
+    background: var(--dc-card-bg);
+    border-radius: var(--dc-radius);
+    box-shadow: var(--dc-shadow);
+    overflow: hidden;
+    margin-bottom: 0.875rem;
+    transition: box-shadow var(--dc-transition), transform var(--dc-transition);
+}
+.dc-card:hover {
+    box-shadow: var(--ev-shadow-float);
+}
+
+/* Card headers — DS v4 triada */
+.dc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 14px;
+    font-family: var(--ns-font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+/* Emerald — salud, paciente, métricas */
+.dc-card-header.dc-emerald,
+.dc-card-header.dc-green {
+    background: var(--ev-gradient-primary);
+    color: #fff;
+}
+/* Indigo — sistema, médico, recomendaciones */
+.dc-card-header.dc-indigo {
+    background: linear-gradient(135deg, var(--ev-primary) 0%, var(--ev-secondary) 100%);
+    color: #fff;
+}
+/* Amber — datos, distribución macros */
+.dc-card-header.dc-amber,
+.dc-card-header.dc-orange {
+    background: linear-gradient(90deg, var(--ns-amber-600) 0%, var(--ns-amber-500) 100%);
+    color: #fff;
+}
+
+.dc-card-body {
+    padding: 1.125rem 1.25rem;
+}
+
+/* ── Info Rows ─────────────────────────────────────── */
+.dc-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    gap: 0.75rem;
+}
+.dc-info-row:last-child { border-bottom: none; }
+.dc-info-label {
+    font-family: var(--ns-font-body);
+    font-size: 11px;
+    color: var(--dc-text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.dc-info-value {
+    font-family: var(--ns-font-body);
+    font-size: 12px;
+    color: var(--dc-text);
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
+}
+
+/* ── Metrics ───────────────────────────────────────── */
+.dc-metrics-section-title {
+    font-family: var(--ns-font-body);
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--dc-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 0.625rem;
+}
+
+.dc-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.625rem;
+}
+.dc-metrics-main {
+    grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 768px) {
+    .dc-metrics-main { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .dc-metrics-main { grid-template-columns: repeat(2, 1fr); }
+    .dc-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.dc-metric-box {
+    background: var(--dc-surface);
+    border-radius: 8px;
+    padding: 0.75rem 0.625rem;
+    text-align: center;
+    transition: transform var(--dc-transition), box-shadow var(--dc-transition);
+    box-shadow: var(--ev-shadow-ambient);
+}
+.dc-metric-box:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ev-shadow-float);
+}
+.dc-metric-highlight {
+    background: rgba(0,108,73,0.08);
+}
+.dc-metric-highlight:hover {
+    box-shadow: var(--ev-shadow-float);
+}
+
+/* Icons en metric boxes */
+.dc-metric-icon {
+    font-size: 14px;
+    margin-bottom: 0.3rem;
+    line-height: 1;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dc-icon-emerald { color: var(--ev-primary-container); }
+.dc-icon-indigo  { color: var(--ev-primary); }
+.dc-icon-amber   { color: var(--ns-amber-500); }
+.dc-icon-slate   { color: var(--ev-on-surface-variant); }
+.dc-icon-danger  { color: var(--ev-tertiary); }
+
+.dc-metric-val {
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--dc-text);
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+.dc-metric-highlight .dc-metric-val {
+    color: var(--ev-primary);
+}
+.dc-metric-unit {
+    font-family: var(--ns-font-body);
+    font-size: 9px;
+    color: var(--dc-text-muted);
+    margin: 2px 0;
+}
+.dc-metric-lbl {
+    font-family: var(--ns-font-body);
+    font-size: 10px;
+    color: var(--dc-text-muted);
+    font-weight: 500;
+}
+
+/* IMC semáforo — DS v4 */
+[data-imc="normal"]    .dc-metric-val { color: var(--ev-primary); }
+[data-imc="normal"]                   { background: var(--ev-secondary-container); }
+[data-imc="bajo"]      .dc-metric-val { color: var(--ev-primary); }
+[data-imc="sobrepeso"] .dc-metric-val { color: var(--ns-amber-600); }
+[data-imc="sobrepeso"]                { background: var(--ns-amber-50); }
+[data-imc="obesidad"]  .dc-metric-val { color: var(--ev-tertiary); }
+[data-imc="obesidad"]                 { background: rgba(164,58,58,0.08); }
+
+/* ── Evaluación cuantitativa — encabezado calórico ── */
+.dc-calorico-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 0.875rem 1rem;
+    background: var(--ev-surface-low);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+.dc-calorico-label {
+    font-family: var(--ns-font-body);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--dc-text-muted);
+    margin-bottom: 4px;
+}
+.dc-formula-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--ns-amber-50);
+    color: var(--ns-amber-700);
+    border-radius: 20px;
+    font-family: var(--ns-font-body);
+    font-size: 11px;
+    font-weight: 500;
+}
+.dc-ree-block { margin-left: auto; text-align: right; }
+.dc-ree-value {
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ev-primary);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+.dc-ree-unit {
+    font-family: var(--ns-font-body);
+    font-size: 11px;
+    color: var(--dc-text-muted);
+    margin-left: 4px;
+}
+
+/* ── Desglose calórico por macro ─────────────────── */
+.dc-macro-desglose {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.625rem;
+}
+@media (max-width: 640px) {
+    .dc-macro-desglose { grid-template-columns: repeat(2, 1fr); }
+}
+
+.dc-macro-item {
+    background: var(--dc-card-bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left-width: 3px;
+    border-left-style: solid;
+    box-shadow: var(--ev-shadow-ambient);
+}
+.dc-macro-cho-item   { border-left-color: var(--ns-amber-500); }
+.dc-macro-prot-item  { border-left-color: var(--ev-primary-container); }
+.dc-macro-grasa-item { border-left-color: var(--ns-amber-400); }
+.dc-macro-fibra-item { border-left-color: var(--ev-primary-container); }
+
+.dc-macro-item-header {
+    font-family: var(--ns-font-body);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dc-text-muted);
+    margin-bottom: 6px;
+}
+.dc-macro-cho-item   .dc-macro-item-header { color: var(--ns-amber-600); }
+.dc-macro-prot-item  .dc-macro-item-header { color: var(--ev-primary); }
+.dc-macro-grasa-item .dc-macro-item-header { color: var(--ns-amber-500); }
+.dc-macro-fibra-item .dc-macro-item-header { color: var(--ev-primary-container); }
+
+.dc-macro-item-data {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    margin-bottom: 4px;
+}
+.dc-macro-num {
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--dc-text);
+    letter-spacing: -0.5px;
+}
+.dc-macro-unit2 {
+    font-family: var(--ns-font-body);
+    font-size: 10px;
+    color: var(--dc-text-muted);
+}
+.dc-macro-item-kcal {
+    font-family: var(--ns-font-body);
+    font-size: 10px;
+    color: var(--dc-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.dc-macro-pct {
+    display: inline-block;
+    padding: 1px 6px;
+    background: rgba(0,108,73,0.08);
+    color: var(--ev-primary);
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 500;
+    margin-left: 2px;
+}
+.dc-macro-fibra-note {
+    color: var(--ev-on-surface-variant);
+    font-style: italic;
+}
+
+/* ── Tabla de distribución por comida ──────────────── */
+.dc-meal-table-wrap {
+    overflow-x: auto;
+    margin-top: 0.625rem;
+    border-radius: 8px;
+    box-shadow: var(--ev-shadow-ambient);
+}
+.dc-meal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--ns-font-body);
+    font-size: 12px;
+}
+.dc-meal-table thead tr {
+    background: var(--ev-surface-low);
+}
+.dc-meal-table thead th {
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--ev-on-surface-variant);
+}
+.dc-meal-table thead th.dc-meal-col-name {
+    text-align: left;
+    min-width: 140px;
+}
+.dc-meal-table td {
+    padding: 9px 12px;
+    text-align: center;
+    color: var(--dc-text);
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace);
+    font-size: 12px;
+    font-weight: 500;
+}
+.dc-meal-table tbody tr:last-child td { border-bottom: none; }
+.dc-meal-table tbody tr:hover { background: var(--ev-surface-low); }
+
+.dc-meal-name {
+    text-align: left !important;
+    font-family: var(--ns-font-body) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--dc-text) !important;
+    white-space: nowrap;
+}
+.dc-meal-icon {
+    color: var(--ns-amber-500);
+    font-size: 11px;
+    margin-right: 5px;
+}
+
+/* Columnas kcal y % */
+.dc-col-kcal,
+.dc-col-pct { white-space: nowrap; }
+.dc-kcal-cell {
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 12px !important;
+    color: var(--ns-amber-600) !important;
+    font-weight: 500 !important;
+}
+.dc-pct-cell {
+    font-family: var(--ns-font-body) !important;
+    font-size: 11px !important;
+    color: var(--ev-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* Fila Total */
+.dc-meal-total-row td {
+    padding: 9px 12px;
+    background: var(--ev-secondary-container);
+    font-weight: 600 !important;
+}
+.dc-meal-total-row .dc-meal-name {
+    color: var(--ev-on-secondary-container) !important;
+}
+.dc-meal-total-row .dc-kcal-cell {
+    color: var(--ev-on-secondary-container) !important;
+}
+
+/* ── Estado vacío distribución ─────────────────────── */
+.dc-empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--dc-text-muted);
+}
+.dc-empty-icon {
+    font-size: 2rem;
+    color: var(--ev-outline-variant);
+    display: block;
+    margin-bottom: 0.75rem;
+}
+.dc-empty-state p {
+    font-family: var(--ns-font-body);
+    font-size: 13px;
+    margin: 0 0 4px;
+    color: var(--ev-on-surface-variant);
+}
+.dc-empty-sub {
+    font-size: 11px !important;
+    color: var(--ev-on-surface-variant) !important;
+}
+
+/* ── Texto clínico ─────────────────────────────────── */
+.dc-text-block {
+    font-family: var(--ns-font-body);
+    font-size: 13px;
+    color: var(--dc-text);
+    line-height: 1.65;
+    white-space: pre-line;
+    min-height: 48px;
+}
+
+/* ── Próxima cita ──────────────────────────────────── */
+.dc-proxima-cita .dc-card-body {
+    display: flex;
+    align-items: center;
+}
+.dc-proxima-fecha {
+    font-family: var(--ns-font-mono, 'JetBrains Mono', monospace);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ev-primary);
+    letter-spacing: -0.5px;
+}

@@ -1,0 +1,324 @@
+/* Usuarios Page Styles */
+
+.usuarios-page {
+  animation: ns-page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Welcome */
+.welcome-msg {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.welcome-msg h1 {
+  font-family: var(--ns-font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ev-on-surface);
+  margin: 0;
+}
+
+.welcome-msg .text-primary {
+  color: var(--ev-primary) !important;
+}
+
+.welcome-msg p {
+  font-size: 0.875rem;
+  color: var(--ns-slate-500);
+  margin: 0.25rem 0 0;
+}
+
+/* Hero */
+.cu-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: var(--ev-surface-lowest);
+  border-radius: var(--ns-radius-lg);
+  box-shadow: var(--ev-shadow-ambient);
+  margin-bottom: 1.5rem;
+}
+
+.cu-hero-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cu-hero-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--ns-radius-lg);
+  background: var(--ns-indigo-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--ns-indigo-500);
+}
+
+.cu-hero-title {
+  font-family: var(--ns-font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ns-slate-900);
+}
+
+.cu-hero-sub {
+  font-size: 0.875rem;
+  color: var(--ns-slate-500);
+}
+
+.cu-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--ns-indigo-500);
+  color: white;
+  border: none;
+  border-radius: var(--ns-radius-md);
+  font-family: var(--ns-font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--ns-dur-normal) var(--ns-ease-smooth);
+}
+
+.cu-hero-btn:hover {
+  background: var(--ns-indigo-600);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+  color: white;
+}
+
+/* Layout */
+.cu-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .cu-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .cu-sidebar {
+    order: -1;
+  }
+}
+
+/* Main Column */
+.cu-main .card {
+  background: var(--ev-surface-lowest);
+  border: none;
+  box-shadow: var(--ev-shadow-ambient);
+  border-radius: var(--ns-radius-lg);
+}
+
+.cu-main .cards__heading {
+  padding: 1rem 1.25rem;
+  border-bottom: 0.5px solid var(--ns-slate-200);
+}
+
+.cu-main .cards__heading h3 {
+  font-family: var(--ns-font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ns-slate-900);
+  margin: 0;
+}
+
+.cu-main .card-body {
+  padding: 1rem 1.25rem;
+}
+
+/* Table */
+.usuarios-page .table {
+  width: 100%;
+  font-family: var(--ns-font-body);
+  font-size: 13px;
+  color: var(--ns-slate-800);
+}
+
+.usuarios-page .table thead th {
+  font-family: var(--ns-font-body);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ns-slate-500);
+  border-bottom: 0.5px solid var(--ns-slate-200);
+  padding: 10px 12px;
+  background: var(--ns-slate-50);
+}
+
+.usuarios-page .table tbody tr:hover {
+  background: var(--ns-slate-50);
+}
+
+.usuarios-page .table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-top: 0.5px solid var(--ns-slate-200);
+}
+
+/* Badges */
+.usuarios-page .badge {
+  font-family: var(--ns-font-body);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--ns-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-success {
+  background: var(--ns-success-bg);
+  color: var(--ns-success-text);
+}
+
+.badge-secondary {
+  background: var(--ns-slate-100);
+  color: var(--ns-slate-500);
+}
+
+/* Sidebar Filters */
+.cu-sidebar .cu-filter-card {
+  background: var(--ev-surface-lowest);
+  border-radius: var(--ns-radius-lg);
+  box-shadow: var(--ev-shadow-ambient);
+  overflow: hidden;
+}
+
+.cu-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-bottom: 0.5px solid var(--ns-slate-200);
+}
+
+.cu-filter-icon {
+  font-size: 1rem;
+  color: var(--ns-indigo-500);
+}
+
+.cu-filter-header span {
+  font-family: var(--ns-font-heading);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ns-slate-900);
+}
+
+.cu-filter-body {
+  padding: 1rem;
+}
+
+.cu-filter-body .form-group {
+  margin-bottom: 1rem;
+}
+
+.cu-filter-body .input__label {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--ns-slate-600);
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cu-filter-body .input-style {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 0.5px solid var(--ns-slate-200);
+  border-radius: var(--ns-radius-md);
+  font-family: var(--ns-font-body);
+  font-size: 13px;
+  color: var(--ns-slate-900);
+  background: transparent;
+  transition: border-color var(--ns-dur-fast), box-shadow var(--ns-dur-fast);
+}
+
+.cu-filter-body .input-style:focus {
+  outline: none;
+  border-color: var(--ns-indigo-500);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+  background: var(--ev-surface-lowest);
+}
+
+.cu-filter-body .input-style::placeholder {
+  color: var(--ns-slate-300);
+}
+
+.cu-filter-body select.input-style {
+  cursor: pointer;
+}
+
+.cu-filter-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.cu-filter-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--ns-radius-md);
+  font-family: var(--ns-font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--ns-dur-fast) var(--ns-ease-smooth);
+}
+
+.cu-filter-actions .btn-primary {
+  background: var(--ns-indigo-500);
+  border: 1px solid var(--ns-indigo-500);
+  color: white;
+}
+
+.cu-filter-actions .btn-primary:hover {
+  background: var(--ns-indigo-600);
+  border-color: var(--ns-indigo-600);
+}
+
+.cu-filter-actions .btn-secondary {
+  background: transparent;
+  border: 0.5px solid var(--ns-slate-200);
+  color: var(--ns-slate-500);
+}
+
+.cu-filter-actions .btn-secondary:hover {
+  background: var(--ns-slate-100);
+  border-color: var(--ns-slate-300);
+  color: var(--ns-slate-700);
+}
+
+/* Page Enter Animation */
+@keyframes ns-page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cu-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .cu-hero-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,93 @@
+/* ============================================================
+   styleCompletarMetricas.css
+   frmCompletarMetricas.aspx
+   ============================================================ */
+
+/* ── Calculadora Nutricional — EV Design System ── */
+#panelCalculadora .card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(19, 27, 46, 0.06);
+    margin-bottom: 1rem;
+}
+
+/* Paso 1: Peso Ideal */
+#panelCalculadora .bg-info {
+    background: linear-gradient(135deg, #006c49 0%, #10b981 100%) !important;
+    border-radius: 8px 8px 0 0;
+}
+#panelCalculadora .bg-info.card-header {
+    color: #fff !important;
+}
+
+/* Paso 2: GEB */
+#panelCalculadora .bg-warning {
+    background: #fef3c7 !important;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px 8px 0 0;
+}
+#panelCalculadora .bg-warning.card-header {
+    color: #131b2e !important;
+}
+
+/* Paso 3+ headers (default dark) */
+#panelCalculadora .bg-dark {
+    background: #131b2e !important;
+    border-radius: 8px 8px 0 0;
+}
+#panelCalculadora .bg-dark.card-header {
+    color: #faf8ff !important;
+}
+#panelCalculadora .bg-success {
+    background: linear-gradient(135deg, #006c49 0%, #10b981 100%) !important;
+    border-radius: 8px 8px 0 0;
+}
+#panelCalculadora .bg-success.card-header {
+    color: #fff !important;
+}
+#panelCalculadora .bg-primary {
+    background: linear-gradient(135deg, #006c49 0%, #10b981 100%) !important;
+    border-radius: 8px 8px 0 0;
+}
+#panelCalculadora .bg-primary.card-header {
+    color: #fff !important;
+}
+
+/* Alertas de resultado */
+#panelCalculadora .alert-success {
+    background: #b7ebce !important;
+    color: #3c6c54 !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+#panelCalculadora .alert-warning {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: none !important;
+    border-left: 4px solid #f59e0b !important;
+    border-radius: 0 8px 8px 0 !important;
+}
+#panelCalculadora .alert-info {
+    background: #eaedff !important;
+    color: #131b2e !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+
+/* Thead de tablas internas */
+#panelCalculadora .thead-dark th {
+    background: #131b2e !important;
+    color: #faf8ff !important;
+    border: none;
+}
+#panelCalculadora .thead-light th {
+    background: #f2f3ff !important;
+    color: #131b2e !important;
+    border: none;
+}
+
+/* Boton toggle calculadora */
+#panelCalculadora .btn-light {
+    background: rgba(250, 248, 255, 0.15) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}

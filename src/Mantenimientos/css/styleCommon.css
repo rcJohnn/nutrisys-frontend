@@ -1,0 +1,246 @@
+/* ════════════════════════════════════════════════════════════
+   styleCommon.css — Componentes compartidos NutriSys
+   Usa tokens --ns-* definidos en theme-nutrisys.css
+   Aplica a todos los frm excepto frmGeneradorPlan
+   ════════════════════════════════════════════════════════════ */
+
+/* ── BREADCRUMB ─────────────────────────────────────────────── */
+.my-breadcrumb {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 4px;
+  font-family: var(--ns-font-body);
+  font-size: 12px;
+}
+.my-breadcrumb .breadcrumb-item a {
+  color: var(--ns-green-600);
+  text-decoration: none;
+  font-weight: 400;
+  transition: color var(--ns-dur-fast) var(--ns-ease-smooth);
+}
+.my-breadcrumb .breadcrumb-item a:hover {
+  color: var(--ns-green-700);
+}
+.my-breadcrumb .breadcrumb-item.active {
+  color: var(--ns-neutral-500);
+}
+.my-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--ns-neutral-400);
+}
+
+/* ── MENSAJE BIENVENIDA ─────────────────────────────────────── */
+.welcome-msg {
+  font-family: var(--ns-font-heading);
+}
+.welcome-msg h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ev-on-surface);
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.welcome-msg p {
+  font-family: var(--ns-font-body);
+  font-size: 13px;
+  color: var(--ev-on-surface-variant);
+  margin: 0;
+}
+
+/* ── CARDS ──────────────────────────────────────────────────── */
+.card_border {
+  background: var(--ev-surface-lowest);
+  border: none !important;
+  border-radius: var(--ns-radius-lg) !important;
+  box-shadow: var(--ev-shadow-ambient);
+  overflow: hidden;
+  animation: ns-page-enter var(--ns-dur-enter) var(--ns-ease-out-expo) both;
+  transition: box-shadow var(--ns-dur-normal) var(--ns-ease-smooth);
+}
+.card_border:hover {
+  box-shadow: 0 16px 40px -4px rgba(19, 27, 46, 0.10);
+  border: none !important;
+}
+
+.cards__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--ev-surface-low);
+  border-bottom: none;
+}
+.cards__heading::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 16px;
+  background: var(--ev-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+/* Variante analítica — agregar clase .analytics al .cards__heading */
+.cards__heading.analytics::before {
+  background: var(--ns-orange-600);
+}
+/* Variante mixta (dashboard) */
+.cards__heading.mixed::before {
+  background: var(--ns-gradient-brand);
+}
+.cards__heading h3 {
+  margin: 0;
+  font-family: var(--ns-font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ev-on-surface);
+  line-height: 1.4;
+}
+
+/* ── LABELS DE FORMULARIO ───────────────────────────────────── */
+.input__label {
+  font-family: var(--ns-font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ev-on-surface-variant);
+  margin-bottom: 4px;
+  display: block;
+  line-height: 1.4;
+}
+
+/* ── INPUTS ─────────────────────────────────────────────────── */
+.input-style {
+  font-family: var(--ns-font-body);
+  font-size: 13px;
+  color: var(--ev-on-surface);
+  background: var(--ev-surface-container);
+  border: none;
+  box-shadow: 0 0 0 1px rgba(187, 202, 191, 0.25);
+  border-radius: var(--ns-radius-md);
+  padding: 9px 12px;
+  height: auto;
+  transition:
+    box-shadow var(--ns-dur-fast) var(--ns-ease-smooth),
+    background var(--ns-dur-fast) var(--ns-ease-smooth);
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+}
+.input-style::placeholder {
+  color: var(--ns-neutral-400);
+  opacity: 0.5;
+}
+.input-style:focus {
+  outline: none;
+  border-color: var(--ev-primary);
+  box-shadow: 0 0 0 3px rgba(0, 108, 73, 0.08);
+  background: var(--ev-surface-lowest);
+}
+.input-style:hover:not(:focus) {
+  box-shadow: 0 0 0 1px rgba(187, 202, 191, 0.45);
+}
+.input-style:disabled,
+.input-style[readonly] {
+  background: var(--ev-surface-container);
+  color: var(--ev-on-surface-variant);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+select.input-style {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A8A82' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+input[type="date"].input-style::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+/* ── BOTONES ─────────────────────────────────────────────────── */
+.btn-style {
+  font-family: var(--ns-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--ns-radius-md);
+  padding: 9px 20px;
+  transition:
+    background var(--ns-dur-normal) var(--ns-ease-smooth),
+    box-shadow var(--ns-dur-normal) var(--ns-ease-smooth),
+    transform var(--ns-dur-normal) var(--ns-ease-smooth),
+    color var(--ns-dur-normal) var(--ns-ease-smooth),
+    border-color var(--ns-dur-normal) var(--ns-ease-smooth);
+  border: none;
+  cursor: pointer;
+}
+.btn-style:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+.btn-style:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+}
+
+.btn-primary.btn-style {
+  background: var(--ev-gradient-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 108, 73, 0.18);
+}
+.btn-primary.btn-style:hover {
+  background: linear-gradient(135deg, #005a3c 0%, #0ea372 100%) !important;
+  box-shadow: 0 4px 16px rgba(0, 108, 73, 0.30) !important;
+  transform: translateY(-1px);
+  color: #fff !important;
+}
+
+.btn-secondary.btn-style {
+  background: transparent;
+  color: var(--ns-neutral-500);
+  box-shadow: 0 0 0 1px rgba(187, 202, 191, 0.30);
+  border: none !important;
+}
+.btn-secondary.btn-style:hover {
+  background: var(--ns-neutral-100) !important;
+  color: var(--ns-neutral-700) !important;
+  transform: translateY(-1px);
+}
+
+.btn-success.btn-style {
+  background: var(--ev-gradient-primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 108, 73, 0.18);
+}
+.btn-success.btn-style:hover {
+  background: linear-gradient(135deg, #005a3c 0%, #0ea372 100%) !important;
+  box-shadow: 0 4px 16px rgba(0, 108, 73, 0.30) !important;
+  transform: translateY(-1px);
+  color: #fff !important;
+}
+
+.btn-danger.btn-style {
+  background: var(--ns-danger-bg);
+  color: var(--ns-danger-text);
+  border: none !important;
+  box-shadow: 0 0 0 1px rgba(164, 58, 58, 0.20);
+}
+.btn-danger.btn-style:hover {
+  background: var(--ns-danger-text) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+/* ── MEAL CHIP — etiqueta de tiempo de comida ───────────────── */
+.ns-meal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}

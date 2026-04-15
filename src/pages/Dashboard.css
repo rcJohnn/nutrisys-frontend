@@ -1,0 +1,366 @@
+/* ─────────────────────────────────────────────────
+   Dashboard Hub CSS — NutriSys
+   ──────────────────────────────────────────────── */
+
+/* ─── Cabecera del hub ─────────────────────────── */
+.hub-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hub-greeting {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--ev-on-surface);
+    letter-spacing: -0.03em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.hub-greeting-name {
+    color: var(--ev-primary);
+}
+
+.hub-fecha {
+    font-size: 0.82rem;
+    color: var(--ev-on-surface-variant);
+    font-weight: 500;
+    margin: 0.25rem 0 0;
+    text-transform: capitalize;
+}
+
+/* ─── Badge de rol ──────────────────────────────── */
+.hub-status-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+}
+
+/* ─── Badges compartidos ────────────────────────── */
+.hub-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.hub-badge-green  { background: rgba(16,185,129,0.12); color: #059669; }
+.hub-badge-indigo { background: rgba(79,70,229,0.10);  color: #4f46e5; }
+.hub-badge-amber  { background: rgba(245,158,11,0.12); color: #d97706; }
+.hub-badge-danger { background: rgba(239,68,68,0.10);  color: #dc2626; }
+.hub-badge-muted  { background: var(--ev-surface-container); color: var(--ev-on-surface-variant); }
+
+/* ─── Sección de rol ────────────────────────────── */
+.hub-section { }
+
+/* ─── Stats row ─────────────────────────────────── */
+.hub-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.hub-stat-card {
+    background: var(--ev-surface-lowest);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(187,202,191,0.18);
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.hub-stat-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+    transform: translateY(-1px);
+}
+
+.hub-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.hub-stat-green  .hub-stat-icon { background: rgba(16,185,129,0.12); color: #059669; }
+.hub-stat-indigo .hub-stat-icon { background: rgba(79,70,229,0.10);  color: #4f46e5; }
+.hub-stat-amber  .hub-stat-icon { background: rgba(245,158,11,0.12); color: #d97706; }
+.hub-stat-slate  .hub-stat-icon { background: var(--ev-surface-container); color: var(--ev-on-surface-variant); }
+
+.hub-stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--ev-on-surface);
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.hub-stat-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--ev-on-surface-variant);
+    margin-top: 0.2rem;
+    line-height: 1.3;
+}
+
+.hub-stat-meta {
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+@media (max-width: 992px) {
+    .hub-stats-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+    .hub-stats-row { grid-template-columns: 1fr; }
+}
+
+/* ─── Cards ─────────────────────────────────────── */
+.hub-card {
+    background: var(--ev-surface-lowest);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(187,202,191,0.18);
+    margin-bottom: 1.25rem;
+}
+
+.hub-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.hub-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ev-on-surface);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.hub-card-subtitle {
+    font-size: 0.8rem;
+    color: var(--ev-on-surface-variant);
+    margin: 0.2rem 0 0;
+    font-weight: 500;
+}
+
+.hub-btn-link {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ev-primary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: opacity 0.15s;
+    text-decoration: none;
+}
+.hub-btn-link:hover { opacity: 0.75; color: var(--ev-primary); }
+
+/* ─── Agenda list ───────────────────────────────── */
+.hub-agenda-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.hub-agenda-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 0.85rem;
+    background: var(--ev-surface-low);
+    border-radius: 10px;
+    transition: background 0.15s;
+}
+
+.hub-agenda-item:hover {
+    background: var(--ev-surface-container);
+}
+
+.hub-agenda-hora {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ev-primary);
+    min-width: 44px;
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.hub-agenda-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.hub-agenda-paciente {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ev-on-surface);
+}
+
+.hub-agenda-clinica,
+.hub-agenda-motivo {
+    font-size: 0.76rem;
+    color: var(--ev-on-surface-variant);
+}
+
+/* ─── Citas grid usuario ────────────────────────── */
+.hub-citas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 640px) {
+    .hub-citas-grid { grid-template-columns: 1fr; }
+}
+
+.hub-cita-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hubCita-hora {
+    font-size: 0.85rem;
+    color: var(--ev-on-surface-variant);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.hubCita-hora { color: var(--ev-on-surface-variant); }
+
+.hub-dias-hasta { color: var(--ev-primary); font-weight: 600; }
+
+/* ─── CTA agendar ───────────────────────────────── */
+.hub-cta-agendar {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: linear-gradient(135deg, rgba(0,108,73,0.06) 0%, rgba(16,185,129,0.06) 100%);
+    border: 1px solid rgba(0,108,73,0.15);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.hub-cta-icon {
+    font-size: 1.75rem;
+    color: var(--ev-primary);
+    flex-shrink: 0;
+}
+
+.hub-cta-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--ev-on-surface);
+    margin: 0 0 0.2rem;
+}
+
+.hub-cta-sub {
+    font-size: 0.8rem;
+    color: var(--ev-on-surface-variant);
+    margin: 0;
+}
+
+/* ─── Accesos rápidos ───────────────────────────── */
+.hub-quicklinks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.hub-quicklink {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 0.75rem;
+    background: var(--ev-surface-low);
+    border-radius: 12px;
+    color: var(--ev-on-surface-variant);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    text-decoration: none;
+}
+
+.hub-quicklink i {
+    font-size: 1.3rem;
+    color: var(--ev-primary);
+    transition: transform 0.15s;
+}
+
+.hub-quicklink:hover {
+    background: var(--ev-surface-container);
+    color: var(--ev-on-surface);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+.hub-quicklink:hover i {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .hub-quicklinks { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ─── Botón primario ────────────────────────────── */
+.hub-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.25rem;
+    background: linear-gradient(135deg, var(--ev-primary) 0%, #005236 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.hub-btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(0,108,73,0.25);
+    transform: translateY(-1px);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ─── Mensaje vacío ─────────────────────────────── */
+.hub-empty-msg {
+    font-size: 0.85rem;
+    color: var(--ev-on-surface-variant);
+    margin: 0;
+    padding: 0.5rem 0;
+}

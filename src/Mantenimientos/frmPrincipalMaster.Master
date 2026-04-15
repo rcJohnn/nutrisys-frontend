@@ -1,0 +1,319 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="frmPrincipalMaster.master.cs" Inherits="PL_CRUD_CONSULTAS.Mantenimientos.frmPrincipalMaster" %>
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>NutriSys Panel Principal</title>
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="../Base/assets/css/style-starter.css">
+    <link rel="stylesheet" href="../Base/assets/css/theme-nutrisys.css">
+    
+    <!-- Google Fonts — NutriSys Design System -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <div class="se-pre-con"></div>
+    <section>
+        <!-- sidebar menu start -->
+        <div class="sidebar-menu sticky-sidebar-menu">
+            <div class="logo">
+                <a href="frmPrincipal.aspx">
+                    <img src="../Base/assets/images/Untitled.png" alt="NutriSys" title="NutriSys" class="img-fluid" style="height:80px;" />
+                </a>
+            </div>
+            <div class="sidebar-menu-inner">
+                <!-- search bar ⌘K -->
+                <div class="ns-sidebar-search">
+                    <input type="text" placeholder="Buscar..." id="ns-search-input" autocomplete="off" />
+                    <span class="ns-search-shortcut">⌘K</span>
+                </div>
+                <!-- sidebar nav start -->
+                <ul id="menu" class="nav nav-pills nav-stacked custom-nav">
+                </ul>
+                <!-- //sidebar nav end -->
+                <!-- toggle button start -->
+                <a class="toggle-btn">
+                    <i class="fa fa-angle-double-left menu-collapsed__left"><span>Colapsar Menú</span></i>
+                    <i class="fa fa-angle-double-right menu-collapsed__right"></i>
+                </a>
+                <!-- //toggle button end -->
+                <!-- user card sidebar bottom -->
+                <div class="ns-user-card">
+                    <div class="ns-user-avatar" id="sidebarUserAvatar">JR</div>
+                    <div>
+                        <div class="ns-user-card-name" id="sidebarUserName">Usuario</div>
+                        <div class="ns-user-card-role">NutriSys</div>
+                    </div>
+                </div>
+                <!-- //user card end -->
+            </div>
+        </div>
+        <!-- //sidebar menu end -->
+
+        <!-- header-starts -->
+        <div class="header sticky-header">
+            <!-- notification menu start -->
+            <div class="menu-right">
+                <div class="navbar user-panel-top">
+                    <div class="user-dropdown-details d-flex">
+                        <div class="profile_details_left">
+                            <ul class="nofitications-dropdown">
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-bell-o"></i><span class="badge blue">3</span></a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <div class="notification_header">
+                                                <h3>Información del Proyecto</h3>
+                                            </div>
+                                        </li>
+                                        <li><a href="#" class="grid">
+                                            <div class="user_img"><img src="../Base/assets/images/Logo.png" alt=""></div>
+                                            <div class="notification_desc">
+                                                <p>CRUD CONSULTAS</p>
+                                                <span>Sistema de Gestion de Citas</span>
+                                            </div>
+                                        </a></li>
+                                        <li class="odd"><a href="#" class="grid">
+                                            <div class="user_img"><img src="../Base/assets/images/Logo.png" alt=""></div>
+                                            <div class="notification_desc">
+                                                <p>Ing. Johnny Rodriguez Campos</p>
+                                                <span>Desarrollador</span>
+                                            </div>
+                                        </a></li>
+                                        <li><a href="#" class="grid">
+                                            <div class="user_img"><img src="../Base/assets/images/Logo.png" alt=""></div>
+                                        </a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="profile_details">
+                            <ul>
+                                <li class="dropdown profile_details_drop">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="dropdownMenu3" aria-haspopup="true" aria-expanded="false">
+                                        <div class="profile_img">
+                                            <img src="../Base/assets/images/Logo.png" class="rounded-circle" alt="" />
+                                            <div class="user-active">
+                                                <span></span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <ul class="dropdown-menu drp-mnu" aria-labelledby="dropdownMenu3">
+                                        <li class="user-info">
+                                            <h5 id="lblNombreUsuario" class="user-name"></h5>
+                                            <span id="lblEmlUsuario" class="status ml-2"></span>
+                                        </li>
+                                        <li class="logout">
+                                            <a href="#" onclick="javascript: cerrarSesion()"><i class="fa fa-power-off"></i> Cerrar Sesión</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--notification menu end -->
+        </div>
+        <!-- //header-ends -->
+
+        <!-- main content start -->
+        <div class="main-content">
+            <!-- content -->
+            <div class="container-fluid content-top-gap">
+                <div>
+                    <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+                    </asp:ContentPlaceHolder>
+                </div>
+            </div>
+            <!-- //content -->
+        </div>
+        <!-- main content end-->
+    </section>
+
+    <!--footer section start-->
+    <footer class="dashboard">
+        <p>&copy 2026 Sistema de Gestion de Consultas | NutriSys </p>
+    </footer>
+    <!--footer section end-->
+
+    <!-- move top -->
+    <button onclick="topFunction()" id="movetop" class="bg-primary" title="Go to top">
+        <span class="fa fa-angle-up"></span>
+    </button>
+    <script>
+        window.onscroll = function () { scrollFunction() };
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                document.getElementById("movetop").style.display = "block";
+            } else {
+                document.getElementById("movetop").style.display = "none";
+            }
+        }
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+    </script>
+    <!-- /move top -->
+
+    <script src="../Base/assets/js/jquery-3.3.1.min.js"></script>
+    <script src="../Base/assets/js/jquery-1.10.2.min.js"></script>
+    <script src="../Base/assets/js/jquery.nicescroll.js"></script>
+    <script src="../Base/assets/js/scripts.js"></script>
+
+    <!-- close script -->
+    <script>
+        var closebtns = document.getElementsByClassName("close-grid");
+        var i;
+        for (i = 0; i < closebtns.length; i++) {
+            closebtns[i].addEventListener("click", function () {
+                this.parentElement.style.display = 'none';
+            });
+        }
+    </script>
+    <!-- //close script -->
+
+    <!-- disable body scroll when navbar is in active -->
+    <script>
+        $(function () {
+            $('.sidebar-menu-collapsed').click(function () {
+                $('body').toggleClass('noscroll');
+            })
+        });
+    </script>
+    <!-- disable body scroll when navbar is in active -->
+
+    <!-- loading-gif Js -->
+    <script src="../Base/assets/js/modernizr.js"></script>
+    <script>
+        $(window).load(function () {
+            $(".se-pre-con").fadeOut("slow");;
+        });
+    </script>
+    <!--// loading-gif Js -->
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="../Base/assets/js/bootstrap.min.js"></script>
+    <script src="../JavaScript/jquery.cookie.js"></script>
+
+    <!-- Interceptor global de sesión expirada -->
+    <script>
+        (function () {
+            var _redirecting = false;
+
+            function manejarSinSesion(respuesta) {
+                if (typeof respuesta !== 'string') return false;
+                if (respuesta.indexOf('AUTH<SPLITER>') !== 0) return false;
+                if (_redirecting) return true;
+                _redirecting = true;
+
+                var mensaje = respuesta.split('<SPLITER>')[1] || 'Sesión expirada.';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sesión expirada',
+                    text: mensaje,
+                    confirmButtonText: 'Iniciar sesión',
+                    allowOutsideClick: false
+                }).then(function () {
+                    // Limpiar cookies de sesión del cliente
+                    var cookieOpts = { expires: -1, path: '/', domain: location.hostname };
+                    $.cookie('GLBUNI', null, cookieOpts);
+                    $.cookie('GLBCOD', null, cookieOpts);
+                    $.cookie('GLBDSC', null, cookieOpts);
+                    $.cookie('GLBTYP', null, cookieOpts);
+                    window.location.href = '../Login/frmInicioSesion.aspx';
+                });
+                return true;
+            }
+
+            // Interceptar TODAS las respuestas AJAX
+            $.ajaxSetup({
+                complete: function (xhr) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data && data.d) manejarSinSesion(data.d);
+                    } catch (e) { /* no es JSON, ignorar */ }
+                }
+            });
+
+            // Exponer para uso directo en callbacks JS individuales
+            window.verificarSesion = manejarSinSesion;
+        })();
+    </script>
+    <!-- //Interceptor global de sesión expirada -->
+
+    <script src="../JavaScript/InicioSesion.js"></script>
+    <script>
+        // Sincroniza user card del sidebar con el nombre del header
+        $(document).ready(function () {
+            var observer = new MutationObserver(function () {
+                var nombre = $('#lblNombreUsuario').text().trim();
+                if (nombre) {
+                    var partes = nombre.split(' ');
+                    var iniciales = partes.length >= 2
+                        ? (partes[0][0] + partes[1][0]).toUpperCase()
+                        : nombre.substring(0, 2).toUpperCase();
+                    $('#sidebarUserAvatar').text(iniciales);
+                    $('#sidebarUserName').text(nombre);
+                }
+            });
+            var el = document.getElementById('lblNombreUsuario');
+            if (el) observer.observe(el, { childList: true, subtree: true, characterData: true });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Timer de inactividad -->
+    <script>
+        (function () {
+            var AVISO_MS  = 18 * 60 * 1000;  // avisa a los 18 min
+            var CIERRE_MS =  2 * 60 * 1000;  // cierra 2 min después
+            var timerAviso, timerCierre;
+            var avisando = false;
+
+            function resetTimer() {
+                if (avisando) return;
+                clearTimeout(timerAviso);
+                timerAviso = setTimeout(mostrarAviso, AVISO_MS);
+            }
+
+            function mostrarAviso() {
+                avisando = true;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sesión por expirar',
+                    html: 'Su sesión se cerrará en <strong>2 minutos</strong> por inactividad.',
+                    confirmButtonText: 'Continuar sesión',
+                    confirmButtonColor: '#4f46e5',
+                    allowOutsideClick: false,
+                    timer: CIERRE_MS,
+                    timerProgressBar: true
+                }).then(function (result) {
+                    if (result.dismiss === Swal.DismissReason.timer) {
+                        cerrarSesion();
+                    } else {
+                        avisando = false;
+                        resetTimer();
+                    }
+                });
+            }
+
+            ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+                .forEach(function (e) { document.addEventListener(e, resetTimer, true); });
+
+            resetTimer();
+        })();
+    </script>
+    <!-- //Timer de inactividad -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css"/>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+</body>
+</html>
