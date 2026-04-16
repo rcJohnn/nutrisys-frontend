@@ -2,3 +2,76 @@
 .expediente-page .nav-tabs .nav-link {
   cursor: pointer;
 }
+
+/* ── Vista Paciente (U) ────────────────────────────────────── */
+.ep-recomendaciones {
+  background: #f8f9ff;
+  border-left: 4px solid var(--color-primary, #4f46e5);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #374151;
+  white-space: pre-line;
+}
+
+.ep-proxima-cita {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #1d4ed8;
+}
+
+/* Grilla de Métricas */
+.ep-metrics-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ep-metric-item {
+  background: #fdfdfd;
+  border: 1px solid #eee;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.ep-metric-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.ep-metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 2px;
+}
+
+.ep-metric-val {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ep-metric-val small {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-left: 2px;
+}
+
+.table-primary td {
+  background-color: rgba(79, 70, 229, 0.1) !important;
+  font-weight: 500;
+}
+
+

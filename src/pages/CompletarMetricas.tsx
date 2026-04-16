@@ -86,6 +86,11 @@ interface CalculadoraState {
   meriendaPMCHO: string; meriendaPMProt: string; meriendaPMGrasa: string; meriendaPMFibra: string;
   cenaCHO: string; cenaProt: string; cenaGrasa: string; cenaFibra: string;
   metaFibra: string;
+  // modo de distribución: 'gramos' o 'porcentaje' para cada macronutriente
+  modoDistCHO: 'gramos' | 'porcentaje';
+  modoDistProt: 'gramos' | 'porcentaje';
+  modoDistGrasa: 'gramos' | 'porcentaje';
+  modoDistFibra: 'gramos' | 'porcentaje';
 }
 
 // ── Cálculos puros ─────────────────────────────────────────────────────────
@@ -97,8 +102,8 @@ const calcIMC = (peso: number, estatura: number): number => {
 
 const clasificarIMC = (imc: number): { texto: string; clase: string } => {
   if (imc < 18.5) return { texto: 'Bajo peso', clase: 'imc-bajo' };
-  if (imc < 25)   return { texto: 'Peso normal', clase: 'imc-normal' };
-  if (imc < 30)   return { texto: 'Sobrepeso', clase: 'imc-sobrepeso' };
+  if (imc < 25) return { texto: 'Peso normal', clase: 'imc-normal' };
+  if (imc < 30) return { texto: 'Sobrepeso', clase: 'imc-sobrepeso' };
   return { texto: 'Obesidad', clase: 'imc-obesidad' };
 };
 
@@ -123,18 +128,18 @@ const calcGEB = (
         : 655.1 + 9.563 * peso + 1.85 * estatura - 4.676 * edad;
     case 'FAO_OMS': {
       if (s === 'M') {
-        if (edad < 3)   return 60.9 * peso - 54;
-        if (edad < 10)  return 22.7 * peso + 495;
-        if (edad < 18)  return 17.5 * peso + 651;
-        if (edad < 30)  return 15.3 * peso + 679;
-        if (edad < 60)  return 11.6 * peso + 879;
+        if (edad < 3) return 60.9 * peso - 54;
+        if (edad < 10) return 22.7 * peso + 495;
+        if (edad < 18) return 17.5 * peso + 651;
+        if (edad < 30) return 15.3 * peso + 679;
+        if (edad < 60) return 11.6 * peso + 879;
         return 13.5 * peso + 487;
       } else {
-        if (edad < 3)   return 61.0 * peso - 51;
-        if (edad < 10)  return 22.5 * peso + 499;
-        if (edad < 18)  return 12.2 * peso + 746;
-        if (edad < 30)  return 14.7 * peso + 496;
-        if (edad < 60)  return 8.7 * peso + 829;
+        if (edad < 3) return 61.0 * peso - 51;
+        if (edad < 10) return 22.5 * peso + 499;
+        if (edad < 18) return 12.2 * peso + 746;
+        if (edad < 30) return 14.7 * peso + 496;
+        if (edad < 60) return 8.7 * peso + 829;
         return 10.5 * peso + 596;
       }
     }
@@ -354,6 +359,10 @@ const INIT_CALC: CalculadoraState = {
   meriendaPMCHO: '', meriendaPMProt: '', meriendaPMGrasa: '', meriendaPMFibra: '',
   cenaCHO: '', cenaProt: '', cenaGrasa: '', cenaFibra: '',
   metaFibra: '25',
+  modoDistCHO: 'gramos',
+  modoDistProt: 'gramos',
+  modoDistGrasa: 'gramos',
+  modoDistFibra: 'gramos',
 };
 
 const FACTORES_ESTRUCTURA: Record<string, number> = {
@@ -431,21 +440,21 @@ const CompletarMetricas: React.FC = () => {
 
     const c = consulta as any;
     const newMetricas = {
-      peso:           (c.PesoKg                    ?? c.Peso_kg)                    ? String(c.PesoKg                    ?? c.Peso_kg)                    : '',
-      estatura:       (c.EstaturaCm                ?? c.Estatura_cm)                ? String(c.EstaturaCm                ?? c.Estatura_cm)                : '',
-      grasaG:         (c.GrasaG                    ?? c.Grasa_g)                    ? String(c.GrasaG                    ?? c.Grasa_g)                    : '',
-      grasaPct:       (c.Grasa_Porcentaje)                                          ? String(c.Grasa_Porcentaje)                                          : '',
-      musculoG:       (c.MusculoG                  ?? c.Musculo_g)                  ? String(c.MusculoG                  ?? c.Musculo_g)                  : '',
-      masaOsea:       (c.Masa_OseaG                ?? c.Masa_Osea_g)                ? String(c.Masa_OseaG                ?? c.Masa_Osea_g)                : '',
-      aguaCorporal:   (c.Agua_Corporal_Pct)                                         ? String(c.Agua_Corporal_Pct)                                         : '',
-      edadMetabolica: (c.Edad_Metabolica)                                           ? String(c.Edad_Metabolica)                                           : '',
-      grasaVisceral:  (c.Grasa_Visceral)                                            ? String(c.Grasa_Visceral)                                            : '',
-      cintura:        (c.Circunferencia_CinturaCm  ?? c.Circunferencia_Cintura_cm)  ? String(c.Circunferencia_CinturaCm  ?? c.Circunferencia_Cintura_cm)  : '',
-      cadera:         (c.Circunferencia_CaderaCm   ?? c.Circunferencia_Cadera_cm)   ? String(c.Circunferencia_CaderaCm   ?? c.Circunferencia_Cadera_cm)   : '',
-      muneca:         (c.Circunferencia_MunecaCm   ?? c.Circunferencia_Muneca_cm)   ? String(c.Circunferencia_MunecaCm   ?? c.Circunferencia_Muneca_cm)   : '',
-      sistolica:      (c.Presion_Arterial_Sistolica)                                ? String(c.Presion_Arterial_Sistolica)                                : '',
-      diastolica:     (c.Presion_Arterial_Diastolica)                               ? String(c.Presion_Arterial_Diastolica)                               : '',
-      observaciones:   c.Observaciones_Medico ?? '',
+      peso: (c.PesoKg ?? c.Peso_kg) ? String(c.PesoKg ?? c.Peso_kg) : '',
+      estatura: (c.EstaturaCm ?? c.Estatura_cm) ? String(c.EstaturaCm ?? c.Estatura_cm) : '',
+      grasaG: (c.GrasaG ?? c.Grasa_g) ? String(c.GrasaG ?? c.Grasa_g) : '',
+      grasaPct: (c.Grasa_Porcentaje) ? String(c.Grasa_Porcentaje) : '',
+      musculoG: (c.MusculoG ?? c.Musculo_g) ? String(c.MusculoG ?? c.Musculo_g) : '',
+      masaOsea: (c.Masa_OseaG ?? c.Masa_Osea_g) ? String(c.Masa_OseaG ?? c.Masa_Osea_g) : '',
+      aguaCorporal: (c.Agua_Corporal_Pct) ? String(c.Agua_Corporal_Pct) : '',
+      edadMetabolica: (c.Edad_Metabolica) ? String(c.Edad_Metabolica) : '',
+      grasaVisceral: (c.Grasa_Visceral) ? String(c.Grasa_Visceral) : '',
+      cintura: (c.Circunferencia_CinturaCm ?? c.Circunferencia_Cintura_cm) ? String(c.Circunferencia_CinturaCm ?? c.Circunferencia_Cintura_cm) : '',
+      cadera: (c.Circunferencia_CaderaCm ?? c.Circunferencia_Cadera_cm) ? String(c.Circunferencia_CaderaCm ?? c.Circunferencia_Cadera_cm) : '',
+      muneca: (c.Circunferencia_MunecaCm ?? c.Circunferencia_Muneca_cm) ? String(c.Circunferencia_MunecaCm ?? c.Circunferencia_Muneca_cm) : '',
+      sistolica: (c.Presion_Arterial_Sistolica) ? String(c.Presion_Arterial_Sistolica) : '',
+      diastolica: (c.Presion_Arterial_Diastolica) ? String(c.Presion_Arterial_Diastolica) : '',
+      observaciones: c.Observaciones_Medico ?? '',
       recomendaciones: c.Recomendaciones ?? '',
     };
 
@@ -732,7 +741,7 @@ const CompletarMetricas: React.FC = () => {
       const items = TIEMPOS.map((t, i) => ({
         Tiempo_Comida: t,
         Consumo_Usual: [evaluacion.desayuno, evaluacion.meriendaAM, evaluacion.almuerzo,
-          evaluacion.meriendaPM, evaluacion.cena][i],
+        evaluacion.meriendaPM, evaluacion.cena][i],
       })).filter(x => x.Consumo_Usual.trim());
       return saveEvaluacionCuantitativa(consultaId, items);
     },
@@ -928,7 +937,7 @@ const CompletarMetricas: React.FC = () => {
   }
 
   // ── Helpers UI ─────────────────────────────────────────────────────────────
-  const setM =(field: keyof MetricasForm, val: string) =>
+  const setM = (field: keyof MetricasForm, val: string) =>
     setMetricas(p => ({ ...p, [field]: val }));
   const setH = (field: keyof HistoriaForm, val: string | boolean) =>
     setHistoria(p => ({ ...p, [field]: val }));
@@ -1306,10 +1315,10 @@ const CompletarMetricas: React.FC = () => {
             <h4 className="cm-card-title"><i className="fa fa-heartbeat" /> Hábitos y Estado</h4>
             <div className="cm-checkboxes">
               {[
-                { field: 'fuma' as const,     label: 'Fuma',            icon: 'fa-smoking',   val: historia.fuma },
-                { field: 'alcohol' as const,  label: 'Consume Alcohol', icon: 'fa-glass',     val: historia.alcohol },
-                { field: 'embarazo' as const, label: 'Embarazo',        icon: 'fa-heart',     val: historia.embarazo },
-                { field: 'lactancia' as const,label: 'Lactancia',       icon: 'fa-child',     val: historia.lactancia },
+                { field: 'fuma' as const, label: 'Fuma', icon: 'fa-smoking', val: historia.fuma },
+                { field: 'alcohol' as const, label: 'Consume Alcohol', icon: 'fa-glass', val: historia.alcohol },
+                { field: 'embarazo' as const, label: 'Embarazo', icon: 'fa-heart', val: historia.embarazo },
+                { field: 'lactancia' as const, label: 'Lactancia', icon: 'fa-child', val: historia.lactancia },
               ].map(({ field, label, icon, val }) => (
                 <label key={field} className={`cm-check-card ${val ? 'cm-check-card--on' : ''}`}>
                   <input type="checkbox" checked={val}
@@ -1835,72 +1844,6 @@ const CompletarMetricas: React.FC = () => {
                     onChange={e => setC('pctGrasa', e.target.value)} placeholder="%" />
                 </div>
               </div>
-              {Math.abs(totalPct - 100) > 0.1 && totalPct > 0 && (
-                <div className="cm-alert cm-alert-warning">
-                  <i className="fa fa-exclamation-triangle" /> Los porcentajes suman {totalPct.toFixed(1)}% (deben sumar 100%)
-                </div>
-              )}
-              <div className="cm-field mt-2">
-                <label>Peso de Referencia</label>
-                <div className="cm-peso-ref-row">
-                  <select value={calc.tipoPesoRef}
-                    onChange={e => setC('tipoPesoRef', e.target.value)}>
-                    <option value="Ideal">Peso Ideal</option>
-                    <option value="Actual">Peso Actual</option>
-                    <option value="Personalizado">Personalizado</option>
-                  </select>
-                  {calc.tipoPesoRef === 'Personalizado' && (
-                    <input type="number" step="0.1" value={calc.pesoPersonalizado}
-                      onChange={e => setC('pesoPersonalizado', e.target.value)}
-                      placeholder="kg" style={{ width: 80 }} />
-                  )}
-                  <span className="cm-peso-ref-val">{pesoRef.toFixed(1)} kg</span>
-                </div>
-              </div>
-              {ree > 0 && totalPct > 0 && (
-                <table className="cm-macro-table">
-                  <thead>
-                    <tr><th>Macronutriente</th><th>Kcal</th><th>Gramos</th><th>g/kg/día</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Carbohidratos</td>
-                      <td>{Math.round(kcalCHO)}</td>
-                      <td>{gramsCHO.toFixed(1)}</td>
-                      <td>{gkgCHO.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td>Proteínas</td>
-                      <td>{Math.round(kcalProt)}</td>
-                      <td>{gramsProt.toFixed(1)}</td>
-                      <td>{gkgProt.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td>Grasas</td>
-                      <td>{Math.round(kcalGrasa)}</td>
-                      <td>{gramsGrasa.toFixed(1)}</td>
-                      <td>{gkgGrasa.toFixed(2)}</td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td><strong>Total</strong></td>
-                      <td><strong>{Math.round(ree)}</strong></td>
-                      <td><strong>{(gramsCHO + gramsProt + gramsGrasa).toFixed(1)}</strong></td>
-                      <td><strong>{pesoRef > 0 ? ((gramsCHO + gramsProt + gramsGrasa) / pesoRef).toFixed(2) : '—'}</strong></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              )}
-            </div>
-
-            {/* PASO 5: Distribución por Tiempos */}
-            <div className="cm-calc-step">
-              <button className="cm-collapsible-btn"
-                onClick={() => setShowDistTiempos(v => !v)}>
-                <i className={`fa ${showDistTiempos ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
-                &nbsp; Paso 5 — Distribución por Tiempos de Comida
-              </button>
               {showDistTiempos && ree <= 0 && (
                 <div className="cm-alert cm-alert-warning" style={{ marginTop: 10 }}>
                   <i className="fa fa-exclamation-triangle" /> <strong>Primero calculá el REE</strong> (Pasos 2 y 3) para poder distribuir por tiempos.
@@ -1922,41 +1865,98 @@ const CompletarMetricas: React.FC = () => {
                     <table className="cm-dist-table">
                       <thead>
                         <tr>
-                          <th>Tiempo</th><th>CHO (g)</th><th>Prot (g)</th>
-                          <th>Grasa (g)</th><th>Fibra (g)</th>
-                          <th>% CHO</th><th>% Prot</th><th>% Grasa</th>
+                          <th>Tiempo</th>
+                          <th>
+                            <div className="cm-dist-header-cell">
+                              <button type="button" className="cm-dist-toggle-btn" onClick={() => setC('modoDistCHO', calc.modoDistCHO === 'gramos' ? 'porcentaje' : 'gramos')} title="Alternar Gramos / %">🔄</button>
+                              <span>CHO {calc.modoDistCHO === 'gramos' ? '(g)' : '(%)'}</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="cm-dist-header-cell">
+                              <button type="button" className="cm-dist-toggle-btn" onClick={() => setC('modoDistProt', calc.modoDistProt === 'gramos' ? 'porcentaje' : 'gramos')} title="Alternar Gramos / %">🔄</button>
+                              <span>Prot {calc.modoDistProt === 'gramos' ? '(g)' : '(%)'}</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="cm-dist-header-cell">
+                              <button type="button" className="cm-dist-toggle-btn" onClick={() => setC('modoDistGrasa', calc.modoDistGrasa === 'gramos' ? 'porcentaje' : 'gramos')} title="Alternar Gramos / %">🔄</button>
+                              <span>Grasa {calc.modoDistGrasa === 'gramos' ? '(g)' : '(%)'}</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="cm-dist-header-cell">
+                              <button type="button" className="cm-dist-toggle-btn" onClick={() => setC('modoDistFibra', calc.modoDistFibra === 'gramos' ? 'porcentaje' : 'gramos')} title="Alternar Gramos / %">🔄</button>
+                              <span>Fibra {calc.modoDistFibra === 'gramos' ? '(g)' : '(%)'}</span>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {tiemposKeys.map((k, i) => {
-                          const rowCHO = parseFloat(calc[k.cho] as string) || 0;
-                          const rowProt = parseFloat(calc[k.prot] as string) || 0;
-                          const rowGrasa = parseFloat(calc[k.grasa] as string) || 0;
                           return (
                             <tr key={TIEMPOS[i]}>
                               <td>{EMOJIS_TIEMPOS[i]} {TIEMPOS[i]}</td>
-                              {(['cho', 'prot', 'grasa', 'fibra'] as const).map(mac => (
-                                <td key={mac}>
-                                  <input
-                                    type="number" step="0.1" className="cm-dist-input"
-                                    value={calc[k[mac]] as string}
-                                    onChange={e => setC(k[mac], e.target.value)}
-                                    onKeyDown={e => {
-                                      const allInputs = document.querySelectorAll<HTMLInputElement>('.cm-dist-input');
-                                      const idx = Array.from(allInputs).indexOf(e.currentTarget);
-                                      if (e.key === 'ArrowDown' && idx + 4 < allInputs.length) {
-                                        e.preventDefault(); allInputs[idx + 4].focus();
-                                      }
-                                      if (e.key === 'ArrowUp' && idx - 4 >= 0) {
-                                        e.preventDefault(); allInputs[idx - 4].focus();
-                                      }
-                                    }}
-                                  />
-                                </td>
-                              ))}
-                              <td className="cm-dist-pct">{gramsCHO > 0 ? ((rowCHO / gramsCHO) * 100).toFixed(1) : '0.0'}%</td>
-                              <td className="cm-dist-pct">{gramsProt > 0 ? ((rowProt / gramsProt) * 100).toFixed(1) : '0.0'}%</td>
-                              <td className="cm-dist-pct">{gramsGrasa > 0 ? ((rowGrasa / gramsGrasa) * 100).toFixed(1) : '0.0'}%</td>
+                              {(
+                                [
+                                  { mac: 'cho', valGramsState: calc[k.cho], total: gramsCHO, modo: calc.modoDistCHO },
+                                  { mac: 'prot', valGramsState: calc[k.prot], total: gramsProt, modo: calc.modoDistProt },
+                                  { mac: 'grasa', valGramsState: calc[k.grasa], total: gramsGrasa, modo: calc.modoDistGrasa },
+                                  { mac: 'fibra', valGramsState: calc[k.fibra], total: metaFibraNum, modo: calc.modoDistFibra },
+                                ] as const
+                              ).map((item) => {
+                                const gramsVal = parseFloat(item.valGramsState as string) || 0;
+                                const renderInputValue = () => {
+                                  if (item.modo === 'gramos') return item.valGramsState;
+                                  if (!item.valGramsState) return '';
+                                  return item.total > 0 ? (gramsVal / item.total * 100).toFixed(1).replace(/\.0$/, '') : '0';
+                                };
+                                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                                  const input = e.target.value;
+                                  if (input === '') {
+                                    setC(k[item.mac as 'cho' | 'prot' | 'grasa' | 'fibra'], '');
+                                    return;
+                                  }
+                                  if (item.modo === 'gramos') {
+                                    setC(k[item.mac as 'cho' | 'prot' | 'grasa' | 'fibra'], input);
+                                  } else {
+                                    const pct = parseFloat(input);
+                                    if (!isNaN(pct)) {
+                                      const calcGrams = item.total > 0 ? (pct / 100) * item.total : 0;
+                                      setC(k[item.mac as 'cho' | 'prot' | 'grasa' | 'fibra'], String(Math.round(calcGrams * 10) / 10));
+                                    } else {
+                                      setC(k[item.mac as 'cho' | 'prot' | 'grasa' | 'fibra'], input);
+                                    }
+                                  }
+                                };
+                                return (
+                                  <td key={item.mac}>
+                                    <input
+                                      type="number" step="0.1" className="cm-dist-input"
+                                      value={renderInputValue() as string}
+                                      onChange={handleChange}
+                                      onKeyDown={e => {
+                                        const allInputs = document.querySelectorAll<HTMLInputElement>('.cm-dist-input');
+                                        const idx = Array.from(allInputs).indexOf(e.currentTarget);
+                                        if (e.key === 'ArrowDown' && idx + 4 < allInputs.length) {
+                                          e.preventDefault(); allInputs[idx + 4].focus();
+                                        }
+                                        if (e.key === 'ArrowUp' && idx - 4 >= 0) {
+                                          e.preventDefault(); allInputs[idx - 4].focus();
+                                        }
+                                      }}
+                                    />
+                                    {item.valGramsState !== '' && (
+                                      <div style={{ fontSize: '0.75em', color: '#6b7280', textAlign: 'center', marginTop: '4px' }}>
+                                        {item.modo === 'gramos' 
+                                          ? (item.total > 0 ? `${(gramsVal / item.total * 100).toFixed(1)}%` : '0%') 
+                                          : `${gramsVal.toFixed(1)}g`
+                                        }
+                                      </div>
+                                    )}
+                                  </td>
+                                );
+                              })}
                             </tr>
                           );
                         })}
@@ -1973,20 +1973,25 @@ const CompletarMetricas: React.FC = () => {
                             const cls = Math.abs(col.dif) < 2
                               ? 'cm-badge-ok'
                               : col.dif > 0 ? 'cm-badge-over' : 'cm-badge-under';
+                            const pct = col.meta > 0 ? ((col.total / col.meta) * 100).toFixed(1) : '0.0';
                             return (
                               <td key={i}>
-                                <span className={`cm-badge ${cls}`}>{col.total.toFixed(1)}g</span>
-                                {Math.abs(col.dif) >= 2 && (
-                                  <span className={`cm-badge ${cls}`} style={{ marginLeft: 4 }}>
-                                    {col.dif > 0 ? '+' : ''}{col.dif}g
-                                  </span>
-                                )}
+                                <div className="cm-dist-total-cell">
+                                  <div className="cm-dist-total-row">
+                                    <span className={`cm-badge ${cls} cm-dist-total-badge`}>{col.total.toFixed(1)}g</span>
+                                    {Math.abs(col.dif) >= 2 && (
+                                      <span className={`cm-badge ${cls} cm-dist-total-dif`}>
+                                        {col.dif > 0 ? '+' : ''}{col.dif}g
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="cm-dist-total-pct">
+                                    {pct}%
+                                  </div>
+                                </div>
                               </td>
                             );
                           })}
-                          <td className="cm-dist-pct"><strong>{gramsCHO > 0 ? ((totalDistCHO / gramsCHO) * 100).toFixed(1) : '0.0'}%</strong></td>
-                          <td className="cm-dist-pct"><strong>{gramsProt > 0 ? ((totalDistProt / gramsProt) * 100).toFixed(1) : '0.0'}%</strong></td>
-                          <td className="cm-dist-pct"><strong>{gramsGrasa > 0 ? ((totalDistGrasa / gramsGrasa) * 100).toFixed(1) : '0.0'}%</strong></td>
                         </tr>
                       </tfoot>
                     </table>

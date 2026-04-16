@@ -8,11 +8,16 @@ import {
   saveAnalisisBioquimico,
 } from '../api/expediente';
 import { getUsuarioById } from '../api/usuarios';
+import { getConsultas } from '../api/consultas';
+import { getConsultas as getProgresoConsultas } from '../api/progreso';
+import { useRef } from 'react';
+declare const Chart: any;
 import type {
   AnalisisBioquimicoResponse,
   SaveHistoriaClinicaData,
   SaveAnalisisBioquimicoData,
 } from '../api/expediente';
+import type { Consulta } from '../api/consultas';
 import './ExpedientePaciente.css';
 
 
@@ -22,14 +27,31 @@ const ExpedientePaciente: React.FC = () => {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'hc' | 'ab'>('hc');
+  const [userActiveTab, setUserActiveTab] = useState<'citas' | 'graficos'>('citas');
+  const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
 
-  // Info del usuario logueado (para auditoría)
+  // Info del usuario logueado (para auditoría y control de vista)
   const [currentUserId, setCurrentUserId] = useState(0);
+  const [userType, setUserType] = useState<string>('M');
+
+  // Graficos refs
+  const refPeso = useRef<HTMLCanvasElement>(null);
+  const refIMC = useRef<HTMLCanvasElement>(null);
+  const refCompos = useRef<HTMLCanvasElement>(null);
+  const refPresion = useRef<HTMLCanvasElement>(null);
+  const instPeso = useRef<any>(null);
+  const instIMC = useRef<any>(null);
+  const instCompos = useRef<any>(null);
+  const instPresion = useRef<any>(null);
 
   useEffect(() => {
-    const id = Number(localStorage.getItem('userId') || '0');
-    setCurrentUserId(id);
+    const uid = Number(localStorage.getItem('userId') || '0');
+    const tipo = localStorage.getItem('userType') || 'M';
+    setCurrentUserId(uid);
+    setUserType(tipo);
   }, []);
+
+  const isUsuario = userType === 'U';
 
   // Info del paciente
   const { data: pacienteInfo } = useQuery({
@@ -83,8 +105,133 @@ const ExpedientePaciente: React.FC = () => {
   const { data: analisisList = [], isLoading: loadingAB } = useQuery({
     queryKey: ['analisis-bioquimico', id],
     queryFn: () => getAnalisisBioquimicoList(Number(id)),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !isUsuario,
   });
+
+  // ── Consultas del paciente (sólo para vista U) ───────
+  const { data: consultasPaciente = [], isLoading: loadingConsultas } = useQuery({
+    queryKey: ['consultas-paciente', id],
+    queryFn: () => getConsultas({ Id_Usuario: Number(id) }),
+    enabled: Boolean(id) && isUsuario,
+  });
+
+  // ── Datos de Progreso (solo para vista U - graficos) ──
+  const { data: progresoData = [] } = useQuery({
+    queryKey: ['progreso-paciente', id],
+    queryFn: () => getProgresoConsultas(Number(id)),
+    enabled: Boolean(id) && isUsuario && userActiveTab === 'graficos',
+  });
+
+  // Efecto para inicializar gráficos
+  useEffect(() => {
+    if (!isUsuario || userActiveTab !== 'graficos' || progresoData.length === 0) return;
+
+    const baseOptions = (yLabel = '') => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' as const } },
+      scales: {
+        y: { title: { display: !!yLabel, text: yLabel } }
+      }
+    });
+
+    const labels = progresoData.map((c: any) => {
+      const d = new Date(c.Fecha_Cita || c.Fecha_Consulta || c.Fecha);
+      return d.toLocaleDateString('es-CR', { day: '2-digit', month: 'short' });
+    });
+
+    // Chart Helper
+    const createChart = (canvas: HTMLCanvasElement | null, inst: React.MutableRefObject<any>, label: string, data: any[], color: string) => {
+      if (!canvas) return;
+      inst.current?.destroy();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        inst.current = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label,
+              data,
+              borderColor: color,
+              backgroundColor: color + '20',
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: baseOptions()
+        });
+      }
+    };
+
+    createChart(refPeso.current, instPeso, 'Peso (kg)', progresoData.map((c: any) => c.PesoKg || c.Peso_kg), '#006c49');
+    createChart(refIMC.current, instIMC, 'IMC', progresoData.map((c: any) => c.IMC || c.Imc), '#3b82f6');
+    
+    // Gráfico compuesto (Grasa y Músculo)
+    if (refCompos.current) {
+      instCompos.current?.destroy();
+      const ctx = refCompos.current.getContext('2d');
+      if (ctx) {
+        instCompos.current = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Grasa (%)', data: progresoData.map((c: any) => c.Grasa_Porcentaje || c.Grasa_g), borderColor: '#ef4444', tension: 0.3 },
+              { label: 'Músculo (%)', data: progresoData.map((c: any) => c.MusculoG || c.Musculo_g), borderColor: '#8b5cf6', tension: 0.3 }
+            ]
+          },
+          options: baseOptions('%')
+        });
+      }
+    }
+
+    // Gráfico Presión Arterial
+    if (refPresion.current) {
+      instPresion.current?.destroy();
+      const ctx = refPresion.current.getContext('2d');
+      if (ctx) {
+        instPresion.current = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Sistólica (mmHg)', data: progresoData.map((c: any) => c.Presion_Arterial_Sistolica || c.Sistolica), borderColor: '#ec4899', tension: 0.3 },
+              { label: 'Diastólica (mmHg)', data: progresoData.map((c: any) => c.Presion_Arterial_Diastolica || c.Diastolica), borderColor: '#3b82f6', tension: 0.3 }
+            ]
+          },
+          options: baseOptions('mmHg')
+        });
+      }
+    }
+
+    return () => {
+      instPeso.current?.destroy();
+      instIMC.current?.destroy();
+      instCompos.current?.destroy();
+      instPresion.current?.destroy();
+    };
+  }, [isUsuario, userActiveTab, progresoData]);
+
+  // Selección de consulta por defecto (la última)
+  useEffect(() => {
+    if (isUsuario && consultasPaciente.length > 0 && selectedConsultaId === null) {
+      const completadas = [...consultasPaciente].filter(c => c.Estado === 'Completada')
+        .sort((a, b) => new Date(b.Fecha_Cita).getTime() - new Date(a.Fecha_Cita).getTime());
+      if (completadas.length > 0) {
+        setSelectedConsultaId(completadas[0].Id_Consulta);
+      }
+    }
+  }, [isUsuario, consultasPaciente, selectedConsultaId]);
+
+  // Última consulta completada con recomendaciones (para cabecera o fallback)
+  const ultimaConsulta = (consultasPaciente as Consulta[])
+    .filter(c => c.Estado === 'Completada')
+    .sort((a, b) => new Date(b.Fecha_Cita).getTime() - new Date(a.Fecha_Cita).getTime())[0] ?? null;
+
+  const consultaActiva = selectedConsultaId 
+    ? (consultasPaciente as any[]).find(c => c.Id_Consulta === selectedConsultaId)
+    : ultimaConsulta;
 
   const [abForm, setAbForm] = useState<SaveAnalisisBioquimicoData>({
     Fecha_Analisis: '',
@@ -180,48 +327,271 @@ const ExpedientePaciente: React.FC = () => {
     );
   }
 
+  const formatFechaCita = (fecha: string) => {
+    if (!fecha) return '—';
+    const d = new Date(fecha);
+    return d.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div className="expediente-page">
       {/* Breadcrumb */}
       <nav className="cm-breadcrumb">
         <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
         <span className="cm-bc-sep"> &rsaquo; </span>
-        <span onClick={() => navigate('/usuarios')} className="cm-bc-link">Pacientes</span>
-        <span className="cm-bc-sep"> &rsaquo; </span>
-        <span className="cm-bc-active">Expediente del Paciente</span>
+        {!isUsuario && (
+          <>
+            <span onClick={() => navigate('/usuarios')} className="cm-bc-link">Pacientes</span>
+            <span className="cm-bc-sep"> &rsaquo; </span>
+          </>
+        )}
+        <span className="cm-bc-active">{isUsuario ? 'Mi Expediente' : 'Expediente del Paciente'}</span>
       </nav>
 
       {/* Header */}
       <div className="welcome-msg pt-3 pb-4">
         <h1>
-          Expediente — <span className="text-primary">
+          {isUsuario ? 'Mi Expediente' : 'Expediente'} — <span className="text-primary">
             {pacienteInfo ? `${pacienteInfo.Nombre} ${pacienteInfo.Prim_Apellido} ${pacienteInfo.Seg_Apellido}` : 'Cargando...'}
           </span>
         </h1>
         {pacienteInfo?.Correo && <p className="text-muted">{pacienteInfo.Correo}</p>}
       </div>
 
-      {/* Tabs */}
-      <ul className="nav nav-tabs mb-4" role="tablist">
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'hc' ? 'active' : ''}`}
-            onClick={() => setActiveTab('hc')}
-            type="button"
-          >
-            <i className="fa fa-notes-medical"></i> Historia Clínica
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'ab' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ab')}
-            type="button"
-          >
-            <i className="fa fa-flask"></i> Análisis Bioquímico
-          </button>
-        </li>
-      </ul>
+      {/* VISTA PACIENTE (U) — pestañas personalizadas */}
+      {isUsuario && (
+        <div>
+          {/* Tabs para Paciente */}
+          <ul className="nav nav-tabs mb-4" role="tablist">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${userActiveTab === 'citas' ? 'active' : ''}`}
+                onClick={() => setUserActiveTab('citas')}
+                type="button"
+              >
+                <i className="fa fa-calendar-check-o"></i> Mis Citas
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${userActiveTab === 'graficos' ? 'active' : ''}`}
+                onClick={() => setUserActiveTab('graficos')}
+                type="button"
+              >
+                <i className="fa fa-line-chart"></i> Mi Progreso
+              </button>
+            </li>
+          </ul>
+
+          {userActiveTab === 'citas' ? (
+            loadingConsultas ? (
+              <div className="text-center p-5"><i className="fa fa-spinner fa-spin fa-2x"></i></div>
+            ) : (
+              <>
+                {/* Selector de Fecha y Detalles de la Cita */}
+                <div className="card card_border py-2 mb-4">
+                  <div className="cards__heading d-flex justify-content-between align-items-center">
+                    <h3><i className="fa fa-stethoscope me-2"></i>Detalles de tu Cita</h3>
+                    <div className="d-flex align-items-center" style={{ gap: '10px' }}>
+                      <label className="mb-0 text-muted" style={{ fontSize: '0.9rem' }}>Elegir fecha:</label>
+                      <select 
+                        className="form-control form-control-sm" 
+                        style={{ width: 'auto' }}
+                        value={selectedConsultaId || ''}
+                        onChange={(e) => setSelectedConsultaId(Number(e.target.value))}
+                      >
+                        {(consultasPaciente as Consulta[])
+                          .filter(c => c.Estado === 'Completada')
+                          .sort((a, b) => new Date(b.Fecha_Cita).getTime() - new Date(a.Fecha_Cita).getTime())
+                          .map(c => (
+                            <option key={c.Id_Consulta} value={c.Id_Consulta}>
+                              {new Date(c.Fecha_Cita).toLocaleDateString('es-CR')}
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  </div>
+                  <div className="card-body">
+                    {consultaActiva ? (
+                      <div className="row">
+                        <div className="col-md-7">
+                          <h5 className="mb-3 text-primary"><i className="fa fa-lightbulb-o me-2"></i>Recomendaciones del Médico</h5>
+                          <div className="ep-recomendaciones mb-4">
+                            {consultaActiva.Recomendaciones || <span className="text-muted">No se registraron recomendaciones en esta cita.</span>}
+                          </div>
+                          {consultaActiva.Proxima_Cita && (
+                            <div className="ep-proxima-cita">
+                              <i className="fa fa-clock-o me-1 text-primary"></i>
+                              <strong>Próxima cita sugerida:</strong> {formatFechaCita(consultaActiva.Proxima_Cita)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="col-md-5">
+                          <h5 className="mb-3 text-primary"><i className="fa fa-bar-chart me-2"></i>Métricas de la Consulta</h5>
+                          <div className="ep-metrics-grid-mini">
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">Peso</span>
+                              <span className="ep-metric-val">{consultaActiva.Peso_kg || consultaActiva.PesoKg || '—'} <small>kg</small></span>
+                            </div>
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">IMC</span>
+                              <span className="ep-metric-val">{consultaActiva.IMC || consultaActiva.Imc || '—'}</span>
+                            </div>
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">Grasa</span>
+                              <span className="ep-metric-val">{consultaActiva.Grasa_Porcentaje || '—'} <small>%</small></span>
+                            </div>
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">Agua Corporal</span>
+                              <span className="ep-metric-val">{consultaActiva.Agua_Corporal_Pct || '—'} <small>%</small></span>
+                            </div>
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">Músculo</span>
+                              <span className="ep-metric-val">{consultaActiva.Musculo_g || consultaActiva.MusculoG || '—'} <small>g</small></span>
+                            </div>
+                            <div className="ep-metric-item">
+                              <span className="ep-metric-label">Presión</span>
+                              <span className="ep-metric-val" style={{ fontSize: '0.9rem' }}>
+                                {consultaActiva.Presion_Arterial_Sistolica || '—'}/{consultaActiva.Presion_Arterial_Diastolica || '—'} <small>mmHg</small>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted">
+                        <i className="fa fa-info-circle mb-2"></i>
+                        <p>Selecciona una cita completada para ver los detalles.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Historial simplificado */}
+                <div className="card card_border py-2 mb-4">
+                  <div className="cards__heading">
+                    <h3><i className="fa fa-history me-2"></i>Historial de Citas</h3>
+                  </div>
+                  <div className="card-body">
+                    {consultasPaciente.length === 0 ? (
+                      <p className="text-center text-muted">No tienes citas registradas.</p>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-hover table-sm">
+                          <thead className="thead-light">
+                            <tr>
+                              <th>Fecha</th>
+                              <th>Médico</th>
+                              <th>Motivo</th>
+                              <th>Estado</th>
+                              <th>Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(consultasPaciente as Consulta[])
+                              .sort((a, b) => new Date(b.Fecha_Cita).getTime() - new Date(a.Fecha_Cita).getTime())
+                              .map(c => (
+                                <tr key={c.Id_Consulta} className={selectedConsultaId === c.Id_Consulta ? 'table-primary' : ''}>
+                                  <td>{formatFechaCita(c.Fecha_Cita)}</td>
+                                  <td>{c.NombreMedico}</td>
+                                  <td>{c.Motivo || '—'}</td>
+                                  <td>
+                                    <span className={`badge ${
+                                      c.Estado === 'Completada' ? 'badge-success' :
+                                      c.Estado === 'Cancelada'  ? 'badge-danger'  :
+                                      c.Estado === 'No Asistió' ? 'badge-warning' :
+                                      'badge-secondary'
+                                    }`}>{c.Estado}</span>
+                                  </td>
+                                  <td>
+                                    {c.Estado === 'Completada' && (
+                                      <button
+                                        className="btn btn-xs btn-primary btn-style"
+                                        onClick={() => setSelectedConsultaId(c.Id_Consulta)}
+                                      >
+                                        <i className="fa fa-check-circle"></i> Seleccionar
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )
+          ) : (
+            /* Tab de Gráficos */
+            <div className="ep-graficos-container">
+              {progresoData.length === 0 ? (
+                <div className="card card_border py-5 text-center text-muted">
+                  <i className="fa fa-line-chart fa-3x mb-3"></i>
+                  <p>No hay suficientes datos de progreso para generar gráficos.</p>
+                </div>
+              ) : (
+                <div className="row">
+                  <div className="col-md-6 mb-4">
+                    <div className="card card_border p-3">
+                      <h4 className="mb-3">Evolución del Peso</h4>
+                      <div style={{ height: '250px' }}><canvas ref={refPeso}></canvas></div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 mb-4">
+                    <div className="card card_border p-3">
+                      <h4 className="mb-3">Evolución del IMC</h4>
+                      <div style={{ height: '250px' }}><canvas ref={refIMC}></canvas></div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 mb-4">
+                    <div className="card card_border p-3">
+                      <h4 className="mb-3">Presión Arterial</h4>
+                      <div style={{ height: '250px' }}><canvas ref={refPresion}></canvas></div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 mb-4">
+                    <div className="card card_border p-3">
+                      <h4 className="mb-3">Composición Corporal</h4>
+                      <div style={{ height: '250px' }}><canvas ref={refCompos}></canvas></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════ */}
+      {/* VISTA MÉDICO/ADMIN (M/A) — expediente completo  */}
+      {/* ════════════════════════════════════════════════ */}
+      {!isUsuario && (
+        <>
+          {/* Tabs */}
+          <ul className="nav nav-tabs mb-4" role="tablist">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'hc' ? 'active' : ''}`}
+                onClick={() => setActiveTab('hc')}
+                type="button"
+              >
+                <i className="fa fa-notes-medical"></i> Historia Clínica
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'ab' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ab')}
+                type="button"
+              >
+                <i className="fa fa-flask"></i> Análisis Bioquímico
+              </button>
+            </li>
+          </ul>
 
       <div className="tab-content">
 
@@ -532,11 +902,17 @@ const ExpedientePaciente: React.FC = () => {
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Regresar */}
       <div className="mb-5">
-        <button type="button" className="btn btn-secondary btn-style" onClick={() => navigate('/usuarios')}>
-          <i className="fa fa-arrow-left" /> Regresar
+        <button
+          type="button"
+          className="btn btn-secondary btn-style"
+          onClick={() => navigate(isUsuario ? '/dashboard' : '/usuarios')}
+        >
+          <i className="fa fa-arrow-left" /> {isUsuario ? 'Volver al inicio' : 'Regresar'}
         </button>
       </div>
     </div>

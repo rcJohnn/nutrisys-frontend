@@ -10,6 +10,9 @@ import {
 import { resolveApiFileUrl } from '../api/client';
 import { getUsuarios, type Usuario } from '../api/usuarios';
 import { getMedicos, getMedicosConAutoagendamiento } from '../api/medicos';
+import { getConfigMedico } from '../api/configAgenda';
+import type { SlotDisponible } from '../types/disponibilidad';
+import { formatFechaDisplay } from '../types/disponibilidad';
 import CalendarioDisponibilidad from '../components/CalendarioDisponibilidad';
 import './MantenimientoConsultas.css';
 
@@ -43,10 +46,15 @@ const MantenimientoConsultas: React.FC = () => {
     estado: 'P',
   });
 
-  // Calendario de disponibilidad state
+  // Calendario state
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [calendarioYear, setCalendarioYear] = useState(new Date().getFullYear());
   const [calendarioMonth, setCalendarioMonth] = useState(new Date().getMonth() + 1);
+
+  // Slot picker state (mejora: mostrar slots al seleccionar fecha)
+  const [vistaPanel, setVistaPanel] = useState<'calendario' | 'slots'>('calendario');
+  const [fechaSlots, setFechaSlots] = useState<string | null>(null);
+  const [slotsParaFecha, setSlotsParaFecha] = useState<SlotDisponible[]>([]);
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,10 +72,17 @@ const MantenimientoConsultas: React.FC = () => {
     enabled: isEdit && Boolean(id),
   });
 
-  // Load medicos: pacientes solo ven médicos con autoagendamiento habilitado
+  // Load medicos
   const { data: medicos = [], isLoading: loadingMedicos } = useQuery({
     queryKey: ['medicos-select', userType],
     queryFn: () => userType === 'U' ? getMedicosConAutoagendamiento() : getMedicos(),
+  });
+
+  // Load config del médico seleccionado para obtener duración del slot
+  const { data: configMedico } = useQuery({
+    queryKey: ['config-medico', form.idMedico],
+    queryFn: () => getConfigMedico(form.idMedico),
+    enabled: form.idMedico > 0,
   });
 
   // Load clinics when medico changes
@@ -76,6 +91,20 @@ const MantenimientoConsultas: React.FC = () => {
     queryFn: () => getClinicasMedico(form.idMedico),
     enabled: form.idMedico > 0,
   });
+
+  // Bug fix 1: para médicos (M), el userId ES el Id_Medico — auto-seleccionar
+  useEffect(() => {
+    if (userType === 'M' && userId > 0 && !isEdit) {
+      setForm(f => ({ ...f, idMedico: userId }));
+    }
+  }, [userType, userId, isEdit]);
+
+  // Bug fix 4: cuando carga la config del médico, aplicar Duracion_Slot_Min (solo en creación)
+  useEffect(() => {
+    if (!isEdit && configMedico?.Duracion_Slot_Min) {
+      setForm(f => ({ ...f, duracion: configMedico.Duracion_Slot_Min }));
+    }
+  }, [configMedico, isEdit]);
 
   // Load data into form when editing
   useEffect(() => {
@@ -92,7 +121,6 @@ const MantenimientoConsultas: React.FC = () => {
           : consultaExistente.Estado === 'Cancelada' ? 'X'
           : consultaExistente.Estado === 'No Asistió' ? 'N' : 'P',
       });
-      // Load paciente info for edit mode
       if (userType !== 'U') {
         getUsuarios({ nombre: '' }).then((usuarios) => {
           const p = (usuarios as Usuario[]).find((u: any) => u.Id_Usuario === consultaExistente.Id_Usuario);
@@ -140,40 +168,50 @@ const MantenimientoConsultas: React.FC = () => {
   const handleMedicoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const idMedico = Number(e.target.value);
     setForm(f => ({ ...f, idMedico, idClinica: 0 }));
-    // Reset calendario cuando cambia el médico
+    // Resetear panel completo al cambiar médico
     setMostrarCalendario(false);
+    setVistaPanel('calendario');
+    setFechaSlots(null);
+    setSlotsParaFecha([]);
   };
 
-  // Manejar selección de fecha desde calendario
-  const handleFechaSeleccionadaCalendario = useCallback((fecha: string, slots: any[]) => {
-    let horaSugerida = form.horaCita;
+  // Mejora: al seleccionar fecha en calendario, mostrar sus slots disponibles
+  const handleFechaSeleccionadaCalendario = useCallback((fecha: string, slots: SlotDisponible[]) => {
+    setFechaSlots(fecha);
+    setSlotsParaFecha(slots);
+    setForm(f => ({ ...f, fechaCita: fecha, horaCita: '' }));
     if (slots.length > 0) {
-      // Sugerir el primer slot disponible
-      horaSugerida = slots[0].Inicio;
+      setVistaPanel('slots');
+    } else {
+      alerta.warning('Sin horarios', 'No hay horarios disponibles para esa fecha.');
     }
-    
+  }, [alerta]);
+
+  // Al seleccionar un slot, rellenar hora + duración y cerrar el panel
+  const handleSlotSeleccionado = useCallback((slot: SlotDisponible) => {
     setForm(f => ({
       ...f,
-      fechaCita: fecha,
-      horaCita: horaSugerida
+      horaCita: slot.Inicio.substring(0, 5),
+      duracion: slot.DuracionMinutos,
     }));
-    
     setMostrarCalendario(false);
-    
-    // Mostrar mensaje informativo
-    alerta.info(
-      'Fecha seleccionada',
-      `Se ha seleccionado la fecha ${fecha} a las ${horaSugerida}. Puedes ajustar la hora si lo deseas.`
-    );
-  }, [form.horaCita, alerta]);
+    setVistaPanel('calendario');
+    setFechaSlots(null);
+    setSlotsParaFecha([]);
+  }, []);
 
-  // Manejar cambio de mes en calendario
+  const handleVolverAlCalendario = useCallback(() => {
+    setVistaPanel('calendario');
+    setFechaSlots(null);
+    setSlotsParaFecha([]);
+    setForm(f => ({ ...f, fechaCita: '', horaCita: '' }));
+  }, []);
+
   const handleMesCambiadoCalendario = useCallback((year: number, month: number) => {
     setCalendarioYear(year);
     setCalendarioMonth(month);
   }, []);
 
-  // Función para buscar paciente
   const seleccionarPaciente = useCallback((p: Usuario) => {
     setSelectedPaciente(p);
     setForm(f => ({ ...f, idUsuario: p.Id_Usuario }));
@@ -186,7 +224,6 @@ const MantenimientoConsultas: React.FC = () => {
     setForm(f => ({ ...f, idUsuario: 0 }));
   }, []);
 
-  // Construye el payload a partir del estado del form
   const buildPayload = (forzar = false) => ({
     Id_Usuario: userType === 'U' ? userId : form.idUsuario,
     Id_Medico: form.idMedico,
@@ -232,7 +269,8 @@ const MantenimientoConsultas: React.FC = () => {
         isEdit ? 'Cita actualizada' : 'Cita agendada',
         isEdit ? 'La cita fue modificada correctamente.' : 'La cita fue agendada correctamente.'
       );
-      navigate('/consultas');
+      // Bug fix 2: usuarios van al panel principal, no a consultas
+      navigate(userType === 'U' ? '/' : '/consultas');
     },
     onError: async (err: any) => {
       const status = err.response?.status;
@@ -289,7 +327,6 @@ const MantenimientoConsultas: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validaciones básicas
     if (!form.fechaCita || !form.horaCita) {
       await alerta.warning('Fecha y hora requeridas', 'Ingresá la fecha y hora de la cita.');
       return;
@@ -315,7 +352,7 @@ const MantenimientoConsultas: React.FC = () => {
         <button
           type="button"
           className="mc-back-btn"
-          onClick={() => navigate('/consultas')}
+          onClick={() => navigate(userType === 'U' ? '/' : '/consultas')}
         >
           <i className="fa fa-arrow-left"></i> Volver
         </button>
@@ -379,10 +416,20 @@ const MantenimientoConsultas: React.FC = () => {
               </div>
             )}
 
-            {/* Médico */}
+            {/* Médico: para 'M' se muestra como badge (auto-seleccionado), para otros como select */}
             <div className="form-group col-md-6">
               <label htmlFor="cboMedico" className="input__label">Médico *</label>
-              {!loadingMedicos && userType === 'U' && medicos.length === 0 ? (
+              {userType === 'M' ? (
+                // Bug fix 1: médico ve su propio nombre sin selector
+                <div className="mc-paciente-badge">
+                  <i className="fa fa-user-md"></i>
+                  <span>
+                    {medicos.find((m: any) => m.Id_Medico === userId)
+                      ? `${(medicos.find((m: any) => m.Id_Medico === userId) as any).Nombre} ${(medicos.find((m: any) => m.Id_Medico === userId) as any).Prim_Apellido}`
+                      : 'Cargando...'}
+                  </span>
+                </div>
+              ) : !loadingMedicos && userType === 'U' && medicos.length === 0 ? (
                 <div className="mc-sin-autoagenda">
                   <i className="fa fa-info-circle"></i>
                   <span>
@@ -396,7 +443,7 @@ const MantenimientoConsultas: React.FC = () => {
                   name="idMedico"
                   className="form-control input-style"
                   required
-                  disabled={userType === 'M' || loadingMedicos}
+                  disabled={loadingMedicos}
                   value={form.idMedico}
                   onChange={handleMedicoChange}
                 >
@@ -467,7 +514,12 @@ const MantenimientoConsultas: React.FC = () => {
                   <button
                     type="button"
                     className="mc-btn-ver-disponibilidad"
-                    onClick={() => setMostrarCalendario(!mostrarCalendario)}
+                    onClick={() => {
+                      setMostrarCalendario(!mostrarCalendario);
+                      setVistaPanel('calendario');
+                      setFechaSlots(null);
+                      setSlotsParaFecha([]);
+                    }}
                     title="Ver disponibilidad del médico"
                   >
                     <i className="fa fa-calendar"></i>
@@ -486,51 +538,116 @@ const MantenimientoConsultas: React.FC = () => {
                 required
                 value={form.horaCita}
                 onChange={handleChange}
+                step={form.duracion * 60}
               />
             </div>
-            <div className="form-group col-md-4">
-              <label htmlFor="duracion" className="input__label">Duración (minutos) *</label>
-              <select
-                id="duracion"
-                name="duracion"
-                className="form-control input-style"
-                required
-                value={form.duracion}
-                onChange={handleChange}
-              >
-                {DURACIONES.map(d => (
-                  <option key={d} value={d}>{d} min</option>
-                ))}
-              </select>
-            </div>
+            {/* Duración: oculto para usuarios (U), configurable para M/A */}
+            {userType !== 'U' && (
+              <div className="form-group col-md-4">
+                <label htmlFor="duracion" className="input__label">
+                  Duración (minutos) *
+                  {configMedico && (
+                    <span className="mc-config-hint"> — config: {configMedico.Duracion_Slot_Min} min</span>
+                  )}
+                </label>
+                <select
+                  id="duracion"
+                  name="duracion"
+                  className="form-control input-style"
+                  required
+                  value={form.duracion}
+                  onChange={handleChange}
+                >
+                  {/* Si la duración del config no está en la lista fija, agregarla */}
+                  {[...new Set([...DURACIONES, configMedico?.Duracion_Slot_Min].filter(Boolean) as number[])].sort((a, b) => a - b).map(d => (
+                    <option key={d} value={d}>{d} min{d === configMedico?.Duracion_Slot_Min ? ' ✓' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
-          {/* Calendario de disponibilidad */}
+          {/* Panel de calendario / slot picker */}
           {form.idMedico > 0 && mostrarCalendario && (
             <div className="mc-calendario-container">
-              <div className="mc-calendario-header">
-                <h4>Disponibilidad del médico</h4>
-                <button
-                  type="button"
-                  className="mc-btn-cerrar-calendario"
-                  onClick={() => setMostrarCalendario(false)}
-                  title="Cerrar calendario"
-                >
-                  <i className="fa fa-times"></i>
-                </button>
-              </div>
-              <CalendarioDisponibilidad
-                medicoId={form.idMedico}
-                year={calendarioYear}
-                month={calendarioMonth}
-                duracionMinutos={form.duracion}
-                onFechaSeleccionada={handleFechaSeleccionadaCalendario}
-                onMesCambiado={handleMesCambiadoCalendario}
-                className="mc-calendario-embedded"
-              />
-              <div className="mc-calendario-info">
-                <p><small>Selecciona una fecha disponible para autocompletar el formulario.</small></p>
-              </div>
+              {vistaPanel === 'calendario' ? (
+                <>
+                  <div className="mc-calendario-header">
+                    <h4><i className="fa fa-calendar"></i> Disponibilidad del médico</h4>
+                    <button
+                      type="button"
+                      className="mc-btn-cerrar-calendario"
+                      onClick={() => setMostrarCalendario(false)}
+                      title="Cerrar calendario"
+                    >
+                      <i className="fa fa-times"></i>
+                    </button>
+                  </div>
+                  <CalendarioDisponibilidad
+                    medicoId={form.idMedico}
+                    year={calendarioYear}
+                    month={calendarioMonth}
+                    duracionMinutos={form.duracion}
+                    onFechaSeleccionada={handleFechaSeleccionadaCalendario}
+                    onMesCambiado={handleMesCambiadoCalendario}
+                    className="mc-calendario-embedded"
+                  />
+                  <div className="mc-calendario-info">
+                    <p><small>Seleccioná una fecha disponible para ver los horarios.</small></p>
+                  </div>
+                </>
+              ) : (
+                /* Mejora: slot picker — se muestra al elegir una fecha */
+                <div className="mc-slot-picker">
+                  <div className="mc-slot-picker-header">
+                    <button
+                      type="button"
+                      className="mc-btn-volver-calendario"
+                      onClick={handleVolverAlCalendario}
+                    >
+                      <i className="fa fa-arrow-left"></i> Volver
+                    </button>
+                    <h4>
+                      <i className="fa fa-clock-o"></i>{' '}
+                      Horarios para {fechaSlots ? formatFechaDisplay(fechaSlots) : ''}
+                    </h4>
+                    <button
+                      type="button"
+                      className="mc-btn-cerrar-calendario"
+                      onClick={() => setMostrarCalendario(false)}
+                    >
+                      <i className="fa fa-times"></i>
+                    </button>
+                  </div>
+
+                  {slotsParaFecha.length === 0 ? (
+                    <div className="mc-slot-empty">
+                      <i className="fa fa-calendar-times-o"></i>
+                      <p>No hay horarios disponibles para esta fecha.</p>
+                    </div>
+                  ) : (
+                    <div className="mc-slot-grid">
+                      {[...slotsParaFecha]
+                        .sort((a, b) => a.Inicio.localeCompare(b.Inicio))
+                        .filter((slot, i, arr) => i === 0 || slot.Inicio !== arr[i - 1].Inicio)
+                        .map((slot, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className="mc-slot-btn"
+                          onClick={() => handleSlotSeleccionado(slot)}
+                        >
+                          <i className="fa fa-clock-o"></i>
+                          <span className="mc-slot-hora">
+                            {slot.Inicio.substring(0, 5)} – {slot.Fin.substring(0, 5)}
+                          </span>
+                          <span className="mc-slot-dur">{slot.DuracionMinutos} min</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -576,7 +693,7 @@ const MantenimientoConsultas: React.FC = () => {
             <button
               type="button"
               className="mc-btn-cancelar"
-              onClick={() => navigate('/consultas')}
+              onClick={() => navigate(userType === 'U' ? '/' : '/consultas')}
             >
               Cancelar
             </button>
