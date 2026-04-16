@@ -57,6 +57,7 @@ export const deleteMedico = async (id: number, idUsuarioGlobal: number, forzarEl
   return response.data;
 };
 
+<<<<<<< HEAD
 export const uploadLogoClinica = async (idClinica: number, file: File, logoAnterior?: string): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
@@ -72,6 +73,8 @@ export const getMedicosConAutoagendamiento = async () => {
   return response.data as Medico[];
 };
 
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 export const getMedicoClinicas = async (idMedico: number) => {
   const response = await apiClient.get(`/MedicoClinica/clinicas/${idMedico}`);
   return response.data;

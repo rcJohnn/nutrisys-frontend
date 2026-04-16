@@ -98,19 +98,30 @@ export interface CreateConsultaData {
   Id_Clinica?: number;
   Fecha_Cita: string;
   Duracion_Minutos: number;
+<<<<<<< HEAD
   Motivo?: string;
   Forzar?: boolean;
 }
 
 export interface UpdateConsultaData {
   Id_Usuario: number;
+=======
+  Motivo: string;
+}
+
+export interface UpdateConsultaData {
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   Id_Medico: number;
   Id_Clinica?: number;
   Fecha_Cita: string;
   Duracion_Minutos: number;
   Estado: string;
+<<<<<<< HEAD
   Motivo?: string;
   Forzar?: boolean;
+=======
+  Motivo: string;
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 }
 
 export interface ClinicaConsulta {

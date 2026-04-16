@@ -35,6 +35,10 @@ const ConfigAgenda: React.FC = () => {
 
   const userType = localStorage.getItem('userType') || 'A';
   const userId = Number(localStorage.getItem('userId') || '0');
+<<<<<<< HEAD
+=======
+  const userIdMedico = Number(localStorage.getItem('userIdMedico') || '0');
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
   // Médico seleccionado (admin ve combo, médico ve su propio ID)
   const [medicoId, setMedicoId] = useState<number>(0);
@@ -63,10 +67,13 @@ const ConfigAgenda: React.FC = () => {
   // Penalizaciones
   const [penalizaciones, setPenalizaciones] = useState<PenalizacionItem[]>([]);
 
+<<<<<<< HEAD
   // Loading estado para batch-saves (fuera de mutations para evitar múltiples callbacks)
   const [isSavingHorario, setIsSavingHorario] = useState(false);
   const [isSavingTiempos, setIsSavingTiempos] = useState(false);
 
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   // Bloqueo form
   const [bloqueoForm, setBloqueoForm] = useState({
     tipo: 'D',
@@ -159,12 +166,23 @@ const ConfigAgenda: React.FC = () => {
   }, [searchParams, medicos]);
 
   // ── Inicializar médico según rol ──
+<<<<<<< HEAD
   // Para médicos, userId ES el Id_Medico (así lo devuelve el SP de login)
   useEffect(() => {
     if (userType === 'M' && userId > 0) {
       setMedicoId(userId);
     }
   }, [userType, userId]);
+=======
+  useEffect(() => {
+    if (userType === 'M' && userIdMedico > 0) {
+      setMedicoId(userIdMedico);
+      const medicosList = medicos as any[];
+      const m = medicosList.find((x: any) => x.Id_Medico === userIdMedico);
+      if (m) setMedicoNombre(`${m.Nombre} ${m.Prim_Apellido}`);
+    }
+  }, [userType, userIdMedico, medicos]);
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
   // ── Mutations ──
   const updateConfigMut = useMutation({
@@ -186,6 +204,26 @@ const ConfigAgenda: React.FC = () => {
     onError: (err: any) => alert(err.response?.data?.error || 'Error'),
   });
 
+<<<<<<< HEAD
+=======
+  const guardarHorarioMut = useMutation({
+    mutationFn: (data: any) => guardarHorarioSemanal(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['horario-semanal', medicoId] });
+      alert('Horario guardado correctamente');
+    },
+    onError: (err: any) => alert(err.response?.data?.error || 'Error'),
+  });
+
+  const guardarTiempoMut = useMutation({
+    mutationFn: (data: any) => guardarTiempoComida(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tiempos-comida', medicoId] });
+      alert('Tiempo de comida guardado');
+    },
+    onError: (err: any) => alert(err.response?.data?.error || 'Error'),
+  });
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
   const crearBloqueoMut = useMutation({
     mutationFn: () => createBloqueo({
@@ -243,6 +281,7 @@ const ConfigAgenda: React.FC = () => {
     });
   };
 
+<<<<<<< HEAD
   const handleGuardarTodoHorario = async () => {
     if (!medicoId || horarioSemanal.length === 0) return;
     setIsSavingHorario(true);
@@ -293,6 +332,33 @@ const ConfigAgenda: React.FC = () => {
     } finally {
       setIsSavingTiempos(false);
     }
+=======
+  const handleGuardarHorarioDia = (diaIndex: number) => {
+    const dia = horarioSemanal.find(h => h.Dia_Semana === diaIndex + 1);
+    if (!dia) return;
+    guardarHorarioMut.mutate({
+      Id_Horario: dia.Id_Horario,
+      Id_Medico: medicoId,
+      Dia_Semana: diaIndex + 1,
+      Hora_Inicio: dia.Hora_Inicio,
+      Hora_Fin: dia.Hora_Fin,
+      Activo: dia.Activo,
+      IdUsuarioGlobal: userId,
+    });
+  };
+
+  const handleGuardarTiempoComida = (tipo: string) => {
+    const tiempo = tiemposComida.find(t => t.Tipo_Comida === tipo);
+    if (!tiempo) return;
+    guardarTiempoMut.mutate({
+      Id_Medico: medicoId,
+      Tipo_Comida: tiempo.Tipo_Comida,
+      Hora_Inicio: tiempo.Hora_Inicio,
+      Hora_Fin: tiempo.Hora_Fin,
+      Activo: tiempo.Activo,
+      IdUsuarioGlobal: userId,
+    });
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   };
 
   const handleCrearBloqueo = () => {
@@ -311,8 +377,13 @@ const ConfigAgenda: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const isSaving = updateConfigMut.isPending || isSavingHorario ||
     isSavingTiempos || crearBloqueoMut.isPending || eliminarBloqueoMut.isPending;
+=======
+  const isSaving = updateConfigMut.isPending || guardarHorarioMut.isPending ||
+    guardarTiempoMut.isPending || crearBloqueoMut.isPending || eliminarBloqueoMut.isPending;
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
   const formatBloqueoTipo = (tipo: string) => tipo === 'D' ? 'Día completo' : 'Horas';
 
@@ -534,8 +605,15 @@ const ConfigAgenda: React.FC = () => {
                 )}
               </div>
               <div className="text-right mt-4">
+<<<<<<< HEAD
                 <button className="btn btn-primary btn-style" onClick={handleGuardarTodoHorario} disabled={isSavingHorario}>
                   <i className={`fa ${isSavingHorario ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> Guardar Horario
+=======
+                <button className="btn btn-primary btn-style" onClick={() => {
+                  horarioSemanal.forEach((_, i) => handleGuardarHorarioDia(i));
+                }} disabled={guardarHorarioMut.isPending}>
+                  <i className={`fa ${guardarHorarioMut.isPending ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> Guardar Horario
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
                 </button>
               </div>
             </div>
@@ -604,8 +682,15 @@ const ConfigAgenda: React.FC = () => {
                 )}
               </div>
               <div className="text-right mt-4">
+<<<<<<< HEAD
                 <button className="btn btn-primary btn-style" onClick={handleGuardarTodosTiempos} disabled={isSavingTiempos}>
                   <i className={`fa ${isSavingTiempos ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> Guardar Tiempos
+=======
+                <button className="btn btn-primary btn-style" onClick={() => {
+                  tiemposComida.forEach(tc => handleGuardarTiempoComida(tc.Tipo_Comida));
+                }} disabled={guardarTiempoMut.isPending}>
+                  <i className={`fa ${guardarTiempoMut.isPending ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> Guardar Tiempos
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
                 </button>
               </div>
             </div>

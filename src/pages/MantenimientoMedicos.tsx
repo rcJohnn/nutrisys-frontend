@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+<<<<<<< HEAD
 import { getMedicoById, createMedico, updateMedico, getMedicoClinicas, addMedicoClinica, deleteMedicoClinica, uploadLogoClinica } from '../api/medicos';
 import { resolveApiFileUrl } from '../api/client';
+=======
+import { getMedicoById, createMedico, updateMedico, getMedicoClinicas, addMedicoClinica, deleteMedicoClinica } from '../api/medicos';
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 import './MantenimientoMedicos.css';
 
 interface MedicoForm {
@@ -57,7 +61,10 @@ const MantenimientoMedicos: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showClinicasPanel, setShowClinicasPanel] = useState(false);
   const [clinicaForm, setClinicaForm] = useState<ClinicaForm>(initialClinica);
+<<<<<<< HEAD
   const [logoFile, setLogoFile] = useState<File | null>(null);
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
   const { data: medico, isLoading: isLoadingMedico } = useQuery({
     queryKey: ['medico', id],
@@ -123,6 +130,7 @@ const MantenimientoMedicos: React.FC = () => {
 
   const addClinicaMutation = useMutation({
     mutationFn: (data: any) => addMedicoClinica(data),
+<<<<<<< HEAD
     onSuccess: async (data: any) => {
       // El SP retorna @FinalIdClinica en ValorScalar → llega como Id_MedicoClinica
       const idClinica = data?.Id_MedicoClinica;
@@ -134,6 +142,9 @@ const MantenimientoMedicos: React.FC = () => {
         }
       }
       setLogoFile(null);
+=======
+    onSuccess: () => {
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
       queryClient.invalidateQueries({ queryKey: ['medicoClinicas', id] });
       setClinicaForm(initialClinica);
       alert('Clínica guardada correctamente');
@@ -231,11 +242,18 @@ const MantenimientoMedicos: React.FC = () => {
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+<<<<<<< HEAD
     setLogoFile(file); // archivo real para subir al servidor
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
       setClinicaForm(prev => ({ ...prev, LogoUrl: dataUrl })); // base64 solo para preview
+=======
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setClinicaForm(prev => ({ ...prev, LogoUrl: dataUrl }));
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
     };
     reader.readAsDataURL(file);
   };
@@ -252,7 +270,11 @@ const MantenimientoMedicos: React.FC = () => {
       Direccion: clinicaForm.Direccion,
       Latitud: clinicaForm.Latitud,
       Longitud: clinicaForm.Longitud,
+<<<<<<< HEAD
       Logo_Url: '' // el logo se sube por separado tras crear la clínica
+=======
+      Logo_Url: clinicaForm.LogoUrl
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
     });
   };
 
@@ -264,7 +286,10 @@ const MantenimientoMedicos: React.FC = () => {
 
   const handleLimpiarFormClinica = () => {
     setClinicaForm(initialClinica);
+<<<<<<< HEAD
     setLogoFile(null);
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   };
 
   if (isLoadingMedico) {
@@ -551,7 +576,11 @@ const MantenimientoMedicos: React.FC = () => {
                         <tr key={c.Id_MedicoClinica}>
                           <td>
                             {c.LogoUrl ? (
+<<<<<<< HEAD
                               <img src={resolveApiFileUrl(c.LogoUrl)} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+=======
+                              <img src={c.LogoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
                             ) : (
                               <div style={{ width: 36, height: 36, borderRadius: 6, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <i className="fa fa-hospital-o" style={{ color: '#aaa' }}></i>

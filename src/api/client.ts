@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+<<<<<<< HEAD
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5159/api';
 
 /** Prefija rutas relativas de archivos estáticos del API (ej: /Uploads/...) con la origin del servidor */
@@ -9,6 +10,9 @@ export const resolveApiFileUrl = (path: string | undefined | null): string => {
   const origin = API_BASE_URL.replace(/\/api\/?$/, '');
   return `${origin}${path.startsWith('/') ? '' : '/'}${path}`;
 };
+=======
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5159/api';
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
 function normalizeKeys(obj: any): any {
   if (Array.isArray(obj)) {

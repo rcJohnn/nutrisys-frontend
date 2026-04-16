@@ -8,16 +8,22 @@ import {
   saveAnalisisBioquimico,
 } from '../api/expediente';
 import { getUsuarioById } from '../api/usuarios';
+<<<<<<< HEAD
 import { getConsultas } from '../api/consultas';
 import { getConsultas as getProgresoConsultas } from '../api/progreso';
 import { useRef } from 'react';
 declare const Chart: any;
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 import type {
   AnalisisBioquimicoResponse,
   SaveHistoriaClinicaData,
   SaveAnalisisBioquimicoData,
 } from '../api/expediente';
+<<<<<<< HEAD
 import type { Consulta } from '../api/consultas';
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 import './ExpedientePaciente.css';
 
 
@@ -27,6 +33,7 @@ const ExpedientePaciente: React.FC = () => {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'hc' | 'ab'>('hc');
+<<<<<<< HEAD
   const [userActiveTab, setUserActiveTab] = useState<'citas' | 'graficos'>('citas');
   const [selectedConsultaId, setSelectedConsultaId] = useState<number | null>(null);
 
@@ -53,6 +60,17 @@ const ExpedientePaciente: React.FC = () => {
 
   const isUsuario = userType === 'U';
 
+=======
+
+  // Info del usuario logueado (para auditoría)
+  const [currentUserId, setCurrentUserId] = useState(0);
+
+  useEffect(() => {
+    const id = Number(localStorage.getItem('userId') || '0');
+    setCurrentUserId(id);
+  }, []);
+
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   // Info del paciente
   const { data: pacienteInfo } = useQuery({
     queryKey: ['usuario-info', id],
@@ -105,6 +123,7 @@ const ExpedientePaciente: React.FC = () => {
   const { data: analisisList = [], isLoading: loadingAB } = useQuery({
     queryKey: ['analisis-bioquimico', id],
     queryFn: () => getAnalisisBioquimicoList(Number(id)),
+<<<<<<< HEAD
     enabled: Boolean(id) && !isUsuario,
   });
 
@@ -233,6 +252,11 @@ const ExpedientePaciente: React.FC = () => {
     ? (consultasPaciente as any[]).find(c => c.Id_Consulta === selectedConsultaId)
     : ultimaConsulta;
 
+=======
+    enabled: Boolean(id),
+  });
+
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   const [abForm, setAbForm] = useState<SaveAnalisisBioquimicoData>({
     Fecha_Analisis: '',
     Hemoglobina: null,
@@ -327,18 +351,22 @@ const ExpedientePaciente: React.FC = () => {
     );
   }
 
+<<<<<<< HEAD
   const formatFechaCita = (fecha: string) => {
     if (!fecha) return '—';
     const d = new Date(fecha);
     return d.toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
   return (
     <div className="expediente-page">
       {/* Breadcrumb */}
       <nav className="cm-breadcrumb">
         <span onClick={() => navigate('/dashboard')} className="cm-bc-link">Inicio</span>
         <span className="cm-bc-sep"> &rsaquo; </span>
+<<<<<<< HEAD
         {!isUsuario && (
           <>
             <span onClick={() => navigate('/usuarios')} className="cm-bc-link">Pacientes</span>
@@ -346,18 +374,28 @@ const ExpedientePaciente: React.FC = () => {
           </>
         )}
         <span className="cm-bc-active">{isUsuario ? 'Mi Expediente' : 'Expediente del Paciente'}</span>
+=======
+        <span onClick={() => navigate('/usuarios')} className="cm-bc-link">Pacientes</span>
+        <span className="cm-bc-sep"> &rsaquo; </span>
+        <span className="cm-bc-active">Expediente del Paciente</span>
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
       </nav>
 
       {/* Header */}
       <div className="welcome-msg pt-3 pb-4">
         <h1>
+<<<<<<< HEAD
           {isUsuario ? 'Mi Expediente' : 'Expediente'} — <span className="text-primary">
+=======
+          Expediente — <span className="text-primary">
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
             {pacienteInfo ? `${pacienteInfo.Nombre} ${pacienteInfo.Prim_Apellido} ${pacienteInfo.Seg_Apellido}` : 'Cargando...'}
           </span>
         </h1>
         {pacienteInfo?.Correo && <p className="text-muted">{pacienteInfo.Correo}</p>}
       </div>
 
+<<<<<<< HEAD
       {/* VISTA PACIENTE (U) — pestañas personalizadas */}
       {isUsuario && (
         <div>
@@ -592,6 +630,29 @@ const ExpedientePaciente: React.FC = () => {
               </button>
             </li>
           </ul>
+=======
+      {/* Tabs */}
+      <ul className="nav nav-tabs mb-4" role="tablist">
+        <li className="nav-item">
+          <button
+            className={`nav-link ${activeTab === 'hc' ? 'active' : ''}`}
+            onClick={() => setActiveTab('hc')}
+            type="button"
+          >
+            <i className="fa fa-notes-medical"></i> Historia Clínica
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${activeTab === 'ab' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ab')}
+            type="button"
+          >
+            <i className="fa fa-flask"></i> Análisis Bioquímico
+          </button>
+        </li>
+      </ul>
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 
       <div className="tab-content">
 
@@ -902,6 +963,7 @@ const ExpedientePaciente: React.FC = () => {
           </div>
         )}
       </div>
+<<<<<<< HEAD
         </>
       )}
 
@@ -913,6 +975,13 @@ const ExpedientePaciente: React.FC = () => {
           onClick={() => navigate(isUsuario ? '/dashboard' : '/usuarios')}
         >
           <i className="fa fa-arrow-left" /> {isUsuario ? 'Volver al inicio' : 'Regresar'}
+=======
+
+      {/* Regresar */}
+      <div className="mb-5">
+        <button type="button" className="btn btn-secondary btn-style" onClick={() => navigate('/usuarios')}>
+          <i className="fa fa-arrow-left" /> Regresar
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
         </button>
       </div>
     </div>

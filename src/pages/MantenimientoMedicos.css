@@ -276,7 +276,10 @@
   background: var(--ns-emerald-500);
   border: 1px solid var(--ns-emerald-500);
   color: white;
+<<<<<<< HEAD
   animation: none;
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 }
 
 .btn-success:hover {
@@ -288,7 +291,10 @@
   background: var(--ns-danger-bg);
   border: 0.5px solid var(--ns-danger-border);
   color: var(--ns-danger-text);
+<<<<<<< HEAD
   animation: none;
+=======
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 }
 
 .btn-danger:hover {

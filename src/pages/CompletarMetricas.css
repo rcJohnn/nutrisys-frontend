@@ -718,6 +718,7 @@
 
 /* ── Distribución por tiempos ── */
 .cm-dist-body { padding-top: 12px; }
+<<<<<<< HEAD
 .cm-dist-table-wrap { 
   overflow-x: auto; 
   margin: 10px 0;
@@ -779,10 +780,33 @@
   border-bottom: 1px solid var(--ns-slate-200);
   color: var(--ev-on-surface-variant);
   text-align: center;
+=======
+.cm-dist-table-wrap { overflow-x: auto; }
+.cm-dist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 500px;
+}
+.cm-dist-table th {
+  background: var(--ev-primary);
+  color: #fff;
+  padding: 7px 8px;
+  text-align: center;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cm-dist-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--ns-slate-200);
+  color: var(--ev-on-surface-variant);
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 }
 .cm-dist-table tfoot td {
   background: var(--ev-surface-low);
   font-weight: 600;
+<<<<<<< HEAD
   padding: 12px;
 }
 .cm-dist-input {
@@ -792,6 +816,13 @@
   font-weight: 600;
   font-size: 14px;
   border-color: var(--ns-slate-300) !important;
+=======
+}
+.cm-dist-input {
+  width: 60px !important;
+  text-align: center;
+  padding: 4px 6px !important;
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 }
 .cm-dist-pct {
   text-align: center;
@@ -800,6 +831,7 @@
   font-variant-numeric: tabular-nums;
   min-width: 52px;
 }
+<<<<<<< HEAD
 .cm-dist-total-cell {
   display: flex;
   flex-direction: column;
@@ -838,6 +870,13 @@
 }
 
 
+=======
+.cm-dist-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  justify-content: flex-end; margin-top: 12px;
+}
+
+>>>>>>> c83e2b966a08969df96e1c9a3c3ddb061bc6df91
 /* ── Badges ── */
 .cm-badge {
   display: inline-block;
